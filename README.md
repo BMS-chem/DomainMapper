@@ -48,12 +48,10 @@ Overlapping group labels, motif tags, and annotations stack vertically to try an
 
 
 To do:
-- add ipaH9 worked example. annotate the LRR repeats as separate domains, grouped under "substrate recognition" label
 - add name and version to footer(?) w/ my name too
 - check that SVG export includes editable text, font selection, etc
 - check resolution of PNG export (300 dpi/600 dpi options?)
 - add undo/redo button?
-- add browser based local storage?
 - ability to visually resize domains by dragging?
 - mention github repo in help panel
 - import from uniprot accession?

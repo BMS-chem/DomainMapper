@@ -295,6 +295,7 @@
         <option value="classvitrim">Class VI TRIM family</option>
         <option value="egfr">EGFR</option>
         <option value="hif1a">HIF-1α</option>
+        <option value="ipah98">IpaH9.8</option>
         <option value="nrf2">NRF2</option>
         <option value="src">SRC</option>
         <option value="txn">TXN</option>
@@ -542,6 +543,39 @@
   };
   state.activeProteinId = state.proteins[0].id;
 
+  // ---------- persistence ----------
+  var STORAGE_KEY = 'domain-architect-state';
+  var SAVE_DEBOUNCE_MS = 400;
+  var saveStateTimer = null;
+  var skipNextSave = true; // the initial bootstrap render (before the user picks anything in
+                            // the start modal) must not schedule a save, or it clobbers a real
+                            // saved session with the still-default blank state before restore runs
+
+  function saveStateNow(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({proteins: state.proteins, settings: state.settings}));
+    } catch(err){ /* localStorage unavailable/full/private-browsing: skip persistence */ }
+  }
+  function scheduleSaveState(){
+    if(skipNextSave){ skipNextSave = false; return; }
+    if(saveStateTimer) clearTimeout(saveStateTimer);
+    saveStateTimer = setTimeout(saveStateNow, SAVE_DEBOUNCE_MS);
+  }
+  function hasSavedState(){
+    try{ return !!localStorage.getItem(STORAGE_KEY); } catch(err){ return false; }
+  }
+  function clearSavedState(){
+    try{ localStorage.removeItem(STORAGE_KEY); } catch(err){ /* ignore */ }
+  }
+  function restoreSavedState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return false;
+      importJSONText(raw);
+      return true;
+    } catch(err){ return false; }
+  }
+
   function activeProtein(){
     return state.proteins.find(function(p){ return p.id === state.activeProteinId; });
   }
@@ -684,6 +718,55 @@
     };
   }
 
+  // Boundaries after UniProt Q8VSC3 (E3 ubiquitin-protein ligase ipaH9.8,
+  // Shigella flexneri, 545 aa) feature annotations, cross-checked against NCBI/PDB
+  // structural literature (Singer et al. 2008, J Biol Chem, PDB 3CVR; Zhu et al.
+  // 2008, PNAS; Li et al. 2016, PMC4822982, PDB 5B0N). N-terminal substrate-
+  // recognition region 1-242 is built from 8 leucine-rich repeats (LRR1 57-77,
+  // LRR2 78-99, LRR3 100-117, LRR4 118-139, LRR5 140-157, LRR6 158-179,
+  // LRR7 182-203, LRR8 205-228), flanked by N-/C-terminal capping sequence.
+  // A short linker (243-250) connects to the C-terminal NEL ("Novel E3 Ligase")
+  // catalytic domain (251/253-545), which forms a ubiquitin thioester at the
+  // invariant active-site Cys337 (Zhu et al. 2008) rather than using a HECT- or
+  // RING-like mechanism. Arg166/Phe187 (within LRR6/LRR7) act as substrate-
+  // binding sensors that relieve LRR-NEL autoinhibition (Bhattacharya et al. 2020,
+  // PMC7728815). The LRR domain directly recognizes host substrates -- NEMO/
+  // IKK-γ (Sanada et al. 2012, Nature), guanylate-binding proteins GBP1/2/4
+  // (Li et al. 2017; Kim et al. 2019, PLoS Pathog PMC6602295), and splicing
+  // factor U2AF35 (Okuda et al. 2005, Cell Host Microbe) -- which are then
+  // ubiquitinated by the NEL domain (with an E2 ~ UBE2D/UbcH5) for proteasomal
+  // degradation, dampening host inflammatory/antibacterial responses.
+  function buildExampleIpaH98(){
+    return {
+      id: uid(), name: 'IpaH9.8', length: 545,
+      labels: [
+        {id:uid(), start:1, end:242, text:'Substrate recognition'}
+      ],
+      domains: [
+        {id:uid(), start:57, end:77, text:'LRR1', color:'#8FB8B0'},
+        {id:uid(), start:78, end:99, text:'LRR2', color:'#A67C6D'},
+        {id:uid(), start:100, end:117, text:'LRR3', color:'#8FB8B0'},
+        {id:uid(), start:118, end:139, text:'LRR4', color:'#A67C6D'},
+        {id:uid(), start:140, end:157, text:'LRR5', color:'#8FB8B0'},
+        {id:uid(), start:158, end:179, text:'LRR6', color:'#A67C6D'},
+        {id:uid(), start:182, end:203, text:'LRR7', color:'#8FB8B0'},
+        {id:uid(), start:205, end:228, text:'LRR8', color:'#A67C6D'},
+        {id:uid(), start:253, end:545, text:'NEL domain', color:'#6B8CAE'}
+      ],
+      marks: [
+        {id:uid(), start:166, end:166, text:'R166', color:'#2B6777'},
+        {id:uid(), start:187, end:187, text:'F187', color:'#2B6777'},
+        {id:uid(), start:337, end:337, text:'C337 (active site)', color:'#B5555C'}
+      ],
+      annotations: [
+        {id:uid(), position:100, text:'NEMO / IKK-γ'},
+        {id:uid(), position:200, text:'GBP1 / GBP2 / GBP4'},
+        {id:uid(), position:230, text:'U2AF35\n(splicing factor)'},
+        {id:uid(), position:337, text:'UBE2D (E2)\n(ubiquitin transfer)'}
+      ]
+    };
+  }
+
   // Class VI TRIM (TIF1) family comparison: TRIM24/TIF1α (O15164, 1050 aa),
   // TRIM28/TIF1β/KAP1 (Q13263, 835 aa), and TRIM33/TIF1γ (Q9UPN9, 1120 aa) share
   // the same N-terminal RBCC (RING-B-box-coiled-coil) and a C-terminal tandem
@@ -791,6 +874,7 @@
     nrf2: buildExampleNRF2,
     egfr: buildExampleKinase,
     hif1a: buildExampleHIF1A,
+    ipah98: buildExampleIpaH98,
     src: buildExampleSRC,
     txn: buildExampleTXN
   };
@@ -860,6 +944,7 @@
     s.axisLength.value = parseFloat(numAxisLengthValue.value) || 1000;
     s.axisLength.unit = selAxisLengthUnit.value;
     renderCanvas();
+    scheduleSaveState();
   });
 
   var helpOverlay = document.getElementById('helpOverlay');
@@ -877,6 +962,17 @@
   var startOverlay = document.getElementById('startOverlay');
   function closeStart(){ startOverlay.classList.remove('open'); }
   var startButtonsEl = document.getElementById('startExampleButtons');
+  if(hasSavedState()){
+    var btnRestoreSession = document.createElement('button');
+    btnRestoreSession.className = 'primary';
+    btnRestoreSession.textContent = 'Restore your last session';
+    btnRestoreSession.addEventListener('click', function(){
+      if(restoreSavedState()) syncSettingsControls();
+      render();
+      closeStart();
+    });
+    startButtonsEl.appendChild(btnRestoreSession);
+  }
   Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
     if(!opt.value) return;
     var btn = document.createElement('button');
@@ -923,6 +1019,7 @@
         p.visible = e.target.checked;
         chip.classList.toggle('hidden-protein', !p.visible);
         renderCanvas();
+        scheduleSaveState();
       });
       proteinListEl.appendChild(chip);
     });
@@ -1532,6 +1629,7 @@
   function render(){
     renderSidebar();
     renderCanvas();
+    scheduleSaveState();
   }
 
   // ---------- event delegation ----------
@@ -1557,6 +1655,7 @@
         p.offset = parseInt(t.value,10) || 0;
       }
       renderCanvas();
+      scheduleSaveState();
       return;
     }
 
@@ -1568,6 +1667,7 @@
         p.box[boxField] = t.value;
       }
       renderCanvas();
+      scheduleSaveState();
       return;
     }
 
@@ -1579,6 +1679,7 @@
         p.axis.color = t.value;
       }
       renderCanvas();
+      scheduleSaveState();
       return;
     }
 
@@ -1594,6 +1695,7 @@
       item[field] = t.value;
     }
     renderCanvas();
+    scheduleSaveState();
   }
 
   document.getElementById('main').addEventListener('input', handleFieldChange);
@@ -1674,6 +1776,7 @@
     state.proteins = [newProtein('Protein 1', 400)];
     state.activeProteinId = state.proteins[0].id;
     document.getElementById('exportFileName').value = 'domain-mapper';
+    clearSavedState();
     render();
   });
 
