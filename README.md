@@ -1,4 +1,4 @@
-# DomainMapper — Read Me
+# DomainMapper
 
 A simple, interactive tool to generate to-scale schematics of protein layouts.
 
