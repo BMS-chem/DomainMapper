@@ -333,7 +333,7 @@
     </div>
     <div class="toolbar">
       <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
-        <option value="" selected>Load example…</option>
+        <option value="" selected>Load example</option>
         <option value="classvitrim">Class VI TRIM family</option>
         <option value="egfr">EGFR</option>
         <option value="hif1a">HIF-1α</option>
@@ -347,11 +347,11 @@
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <input type="text" id="exportFileName" value="domain-mapper" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
-      <button id="btnImport" class="ghost">Import…</button>
+      <button id="btnImport" class="ghost">Import</button>
       <button id="btnExportJson" class="ghost">Export JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <div class="export-menu">
-        <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export ▾</button>
+        <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
         <div id="exportPopover" class="export-popover" role="menu">
           <div class="export-popover-row">
             <label><input type="radio" name="exportFormat" id="exportFormatSvg" value="svg"> SVG</label>
@@ -458,8 +458,17 @@
       <h2>DomainMapper</h2>
     </div>
     <div class="help-panel-body">
-      <p>Load a worked example to see how the tool is used, or start with a blank canvas.</p>
-      <div id="startExampleButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 20px;"></div>
+      <p>Choose how you'd like to start.</p>
+
+      <div class="field-row" style="margin-bottom:16px;">
+        <label style="width:auto;margin-right:8px;">Worked example</label>
+        <select id="startExampleSelect" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;flex:1;">
+          <option value="" selected>Choose an example…</option>
+        </select>
+      </div>
+
+      <div id="startRestoreRow" style="margin-bottom:12px;"></div>
+
       <button id="btnStartBlank" style="width:100%;">Start with a blank canvas</button>
     </div>
   </div>
@@ -468,18 +477,11 @@
 <div id="helpOverlay">
   <div class="help-panel">
     <div class="help-panel-header">
-      <h2>DomainMapper — Read Me</h2>
+      <h2>DomainMapper — Overview</h2>
       <button id="btnHelpClose" class="icon-btn ghost" title="Close">✕</button>
     </div>
     <div class="help-panel-body">
       <p>Single-file HTML tool for to-scale protein domain schematics.</p>
-
-      <h2>Layout</h2>
-      <ul>
-        <li>Header: global settings, import/export</li>
-        <li>Sidebar (left, scrolls independently): protein list + editor</li>
-        <li>Canvas (right): live diagram</li>
-      </ul>
 
       <h2>Proteins (sidebar list)</h2>
       <ul>
@@ -513,19 +515,12 @@
       <h2>Import / Export (header)</h2>
       <ul>
         <li><strong>File name</strong>: base name for all exports</li>
-        <li><strong>Import…</strong>: load a <code>.json</code> file, replaces current diagram</li>
+        <li><strong>Import</strong>: load a <code>.json</code> file, replaces current diagram</li>
         <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
-        <li><strong>Export…</strong>: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting</li>
-        <li><strong>Load example…</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
-        <li><strong>Undo / Redo</strong>: step backward/forward through recent edits (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
-        <li><strong>Reset</strong>: clear to single blank protein</li>
-      </ul>
-
-      <h2>Autosave &amp; session restore</h2>
-      <ul>
-        <li>Your work is saved automatically to this browser (debounced ~400ms after each edit) — no explicit save step needed.</li>
-        <li>On reload, if a saved session exists, you'll be offered a <strong>Restore your last session</strong> option alongside the worked examples.</li>
-        <li><strong>Reset</strong> clears both the on-screen diagram and the saved session.</li>
+        <li><strong>Export image</strong>: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting</li>
+        <li><strong>Load example</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
+        <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
+        <li><strong>Reset</strong>: clear canvas</li>
       </ul>
 
       <p>Source, issues, and license: <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">github.com/bms-chem/DomainMapper</a></p>
@@ -1143,10 +1138,25 @@
 
   var startOverlay = document.getElementById('startOverlay');
   function closeStart(){ startOverlay.classList.remove('open'); }
-  var startButtonsEl = document.getElementById('startExampleButtons');
+  var startExampleSelect = document.getElementById('startExampleSelect');
+  Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
+    if(!opt.value) return;
+    var o = document.createElement('option');
+    o.value = opt.value; o.textContent = opt.textContent;
+    startExampleSelect.appendChild(o);
+  });
+  startExampleSelect.addEventListener('change', function(){
+    var key = startExampleSelect.value;
+    if(!key) return;
+    loadExampleByKey(key);
+    resetHistory();
+    closeStart();
+  });
+
   if(hasSavedState()){
     var btnRestoreSession = document.createElement('button');
     btnRestoreSession.className = 'primary';
+    btnRestoreSession.style.width = '100%';
     btnRestoreSession.textContent = 'Restore your last session';
     btnRestoreSession.addEventListener('click', function(){
       if(restoreSavedState()) syncSettingsControls();
@@ -1154,20 +1164,8 @@
       resetHistory();
       closeStart();
     });
-    startButtonsEl.appendChild(btnRestoreSession);
+    document.getElementById('startRestoreRow').appendChild(btnRestoreSession);
   }
-  Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
-    if(!opt.value) return;
-    var btn = document.createElement('button');
-    btn.className = 'ghost';
-    btn.textContent = opt.textContent;
-    btn.addEventListener('click', function(){
-      loadExampleByKey(opt.value);
-      resetHistory();
-      closeStart();
-    });
-    startButtonsEl.appendChild(btn);
-  });
   document.getElementById('btnStartBlank').addEventListener('click', function(){
     resetHistory();
     closeStart();

@@ -4,12 +4,6 @@ A simple, interactive tool to generate to-scale schematics of protein layouts.
 
 Repository: https://github.com/bms-chem/DomainMapper
 
-## Layout
-
-- Header: global settings, import/export
-- Sidebar (left, scrolls independently): protein list + editor
-- Canvas (right): live diagram
-
 ## Proteins (sidebar list)
 
 - **+ Add**: new protein
@@ -40,20 +34,15 @@ Overlapping group labels, motif tags, and annotations stack vertically to try an
 ## Import / Export (header)
 
 - **File name**: base name for all exports
-- **Import…**: load a `.json` file, replaces current diagram
+- **Import**: load a `.json` file, replaces current diagram
 - **Export JSON**: full data + all settings that can be re-imported later
-- **Export…**: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting
-- **Load example…**: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)
-- **Undo / Redo**: step backward/forward through recent edits (`Ctrl+Z` / `Ctrl+Y`, or `Ctrl+Shift+Z`)
-- **Reset**: clear to single blank protein
-
-## Autosave / session restore
-
-- Your work is saved automatically to this browser (debounced ~400ms after each edit) — no explicit save step needed.
-- On reload, if a saved session exists, you'll be offered a **Restore your last session** option alongside the worked examples.
-- **Reset** clears both the on-screen diagram and the saved session.
+- **Export image**: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting
+- **Load example**: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)
+- **Undo / Redo** (`Ctrl+Z` / `Ctrl+Y`, or `Ctrl+Shift+Z`)
+- **Reset**: clear canvas
 
 
 To do:
 - ability to visually resize domains by dragging?
 - import from uniprot accession?
+- hide selected residue coordinates for adjacent domains                            
