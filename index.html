@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Domain Architect — protein domain schematics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F5F0;
+    --panel:#FFFFFF;
+    --ink:#20211D;
+    --ink-soft:#5C5A50;
+    --hairline:#DDD8C9;
+    --accent:#2B6777;
+    --accent-soft:#DCEAEA;
+    --brick:#B5555C;
+    --brick-soft:#F3DEDD;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+  }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--accent-soft);}
+  #app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+  header{
+    padding:18px 24px;
+    border-bottom:1px solid var(--hairline);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    background:var(--panel);
+  }
+  header .title-block{display:flex;align-items:baseline;gap:10px;}
+  header h1{
+    font-size:18px;
+    margin:0;
+    letter-spacing:0.01em;
+    font-weight:700;
+  }
+  header .rule{
+    width:22px;height:2px;background:var(--accent);display:inline-block;
+  }
+  header .subtitle{font-size:12.5px;color:var(--ink-soft);}
+  header .toolbar{display:flex;gap:8px;flex-wrap:wrap;}
+
+  button{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--hairline);
+    background:var(--panel);
+    color:var(--ink);
+    padding:7px 12px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  button:hover{border-color:var(--accent);}
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.primary:hover{background:#245862;}
+  button.ghost{background:transparent;}
+  button.active-toggle{background:var(--accent-soft);border-color:var(--accent);}
+  button.danger-text{color:var(--brick);border-color:transparent;background:transparent;padding:4px 6px;font-size:12px;}
+  button.danger-text:hover{background:var(--brick-soft);border-radius:5px;}
+  button.icon-btn{padding:4px 8px;font-size:12px;}
+  button:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* settings drawer */
+  #settingsPanel{
+    display:flex;
+    background:var(--panel);
+    border-bottom:1px solid var(--hairline);
+    padding:16px 24px 18px;
+    gap:26px;
+    flex-wrap:wrap;
+  }
+  .settings-group{display:flex;flex-direction:column;gap:6px;min-width:170px;}
+  .settings-group-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);font-weight:700;}
+  .settings-row{display:flex;gap:6px;align-items:center;}
+  .settings-row select, .settings-row input[type=number]{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:12.5px;
+    padding:5px 6px;
+    border:1px solid var(--hairline);
+    border-radius:5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .settings-row select{flex:1;min-width:0;}
+  .settings-row input[type=number]{width:52px;font-family:'IBM Plex Mono',monospace;}
+  .settings-row input[type=color]{width:30px;height:28px;padding:0;border:1px solid var(--hairline);border-radius:4px;cursor:pointer;}
+  .settings-row label{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .settings-divider{width:1px;background:var(--hairline);align-self:stretch;margin:2px 0;}
+
+  #main{display:flex;flex:1;min-height:0;overflow:hidden;}
+  #sidebar{
+    width:400px;
+    min-width:340px;
+    max-width:440px;
+    min-height:0;
+    border-right:1px solid var(--hairline);
+    background:var(--panel);
+    overflow-y:auto;
+    padding:18px 18px 60px;
+  }
+  #canvasSection{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;}
+  #canvasToolbar{
+    padding:12px 20px;
+    border-bottom:1px solid var(--hairline);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--panel);
+  }
+  #canvasWrapper{
+    flex:1;
+    overflow:auto;
+    padding:28px;
+  }
+  #canvasWrapper svg{
+    background:var(--panel);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius);
+    display:block;
+  }
+
+  .section-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin:22px 0 8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .section-label:first-child{margin-top:0;}
+
+  .chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 9px;
+    border:1px solid var(--hairline);
+    border-radius:6px;
+    margin-bottom:6px;
+    cursor:pointer;
+    background:var(--paper);
+  }
+  .chip.active{border-color:var(--accent);background:var(--accent-soft);}
+  .chip .chip-name{font-weight:600;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .chip .chip-visible{width:15px;height:15px;flex-shrink:0;cursor:pointer;accent-color:var(--accent);}
+  .chip.hidden-protein{opacity:.5;}
+  .chip.hidden-protein .chip-name{text-decoration:line-through;text-decoration-color:var(--ink-soft);}
+  .chip .chip-len{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);}
+  .chip .chip-actions{display:flex;gap:2px;}
+
+  .field-row{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+  .field-row label{font-size:11px;color:var(--ink-soft);width:52px;flex-shrink:0;}
+  .field-row input[type=text], .field-row input[type=number], .field-row textarea, .field-row select{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:13px;
+    padding:6px 8px;
+    border:1px solid var(--hairline);
+    border-radius:5px;
+    width:100%;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field-row input[type=number]{font-family:'IBM Plex Mono',monospace;}
+
+  table.item-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  table.item-table th{
+    font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);
+    text-align:left;padding:0 4px 4px;font-weight:600;
+  }
+  table.item-table td{padding:3px 4px;vertical-align:middle;}
+  table.item-table input[type=number]{width:56px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 5px;border:1px solid var(--hairline);border-radius:4px;}
+  table.item-table input[type=text]{width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--hairline);border-radius:4px;}
+  table.item-table textarea{width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--hairline);border-radius:4px;font-family:'IBM Plex Sans',sans-serif;resize:vertical;min-height:32px;}
+  table.item-table input[type=color]{width:30px;height:26px;padding:0;border:1px solid var(--hairline);border-radius:4px;cursor:pointer;background:none;}
+
+  .add-row-btn{width:100%;padding:7px;font-size:12px;border:1px dashed var(--hairline);background:transparent;color:var(--ink-soft);}
+  .add-row-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .empty-note{font-size:12px;color:var(--ink-soft);font-style:italic;padding:6px 2px 2px;}
+
+  #helpOverlay, #startOverlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(32,33,29,0.45);
+    z-index:1000;
+    align-items:flex-start;
+    justify-content:center;
+    padding:5vh 20px;
+  }
+  #helpOverlay.open, #startOverlay.open{display:flex;}
+  .help-panel{
+    background:var(--panel);
+    border-radius:10px;
+    width:100%;
+    max-width:720px;
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    overflow:hidden;
+  }
+  .help-panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 22px;
+    border-bottom:1px solid var(--hairline);
+    flex-shrink:0;
+  }
+  .help-panel-header h2{margin:0;font-size:16px;font-weight:700;}
+  .help-panel-body{
+    padding:22px 26px 30px;
+    overflow-y:auto;
+    font-size:13.5px;
+    line-height:1.65;
+    color:var(--ink);
+  }
+  .help-panel-body h1{font-size:0;margin:0;} /* title already in header */
+  .help-panel-body h2{
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--accent);
+    font-weight:700;
+    margin:26px 0 8px;
+    border-bottom:1px solid var(--hairline);
+    padding-bottom:6px;
+  }
+  .help-panel-body h2:first-child{margin-top:0;}
+  .help-panel-body p{margin:0 0 10px;}
+  .help-panel-body ul{margin:0 0 4px;padding-left:20px;}
+  .help-panel-body li{margin-bottom:6px;}
+  .help-panel-body code{
+    font-family:'IBM Plex Mono',monospace;
+    background:var(--paper);
+    border:1px solid var(--hairline);
+    border-radius:4px;
+    padding:1px 5px;
+    font-size:12.5px;
+  }
+  .help-panel-body strong{font-weight:700;}
+
+  @media (max-width: 900px){
+    html, body{height:auto;overflow:visible;}
+    #app{height:auto;min-height:100vh;overflow:visible;}
+    #main{flex-direction:column;overflow:visible;}
+    #sidebar{width:100%;max-width:none;border-right:none;border-bottom:1px solid var(--hairline);max-height:46vh;}
+    .settings-divider{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title-block">
+      <span class="rule"></span>
+      <h1>Domain Architect</h1>
+      <span class="subtitle">to-scale protein domain schematics</span>
+    </div>
+    <div class="toolbar">
+      <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
+        <option value="" selected>Load example…</option>
+        <option value="classvitrim">Class VI TRIM family</option>
+        <option value="egfr">EGFR</option>
+        <option value="hif1a">HIF-1α</option>
+        <option value="nrf2">NRF2</option>
+        <option value="src">SRC</option>
+        <option value="txn">TXN</option>
+      </select>
+      <button id="btnReset" class="ghost">Reset</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <input type="text" id="exportFileName" value="domain-architect" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
+      <button id="btnImport" class="ghost">Import…</button>
+      <button id="btnExportJson" class="ghost">Export JSON</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);cursor:pointer;">
+        <input type="checkbox" id="transparentBg" style="width:auto;">Transparent background
+      </label>
+      <button id="btnExportSvg">Export SVG</button>
+      <button id="btnExportPng" class="primary">Export PNG</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <button id="btnHelp" class="ghost">? Help</button>
+      <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+    </div>
+  </header>
+
+  <div id="settingsPanel">
+    <div class="settings-group">
+      <div class="settings-group-title">Protein name text</div>
+      <div class="settings-row">
+        <select id="fontProteinFamily"></select>
+      </div>
+      <div class="settings-row">
+        <label>Size</label><input type="number" id="fontProteinSize" min="8" max="32" step="0.5">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Domain name text</div>
+      <div class="settings-row">
+        <select id="fontDomainFamily"></select>
+      </div>
+      <div class="settings-row">
+        <label>Size</label><input type="number" id="fontDomainSize" min="8" max="32" step="0.5">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Annotations</div>
+      <div class="settings-row">
+        <select id="fontNumberFamily"></select>
+      </div>
+      <div class="settings-row">
+        <label>Size</label><input type="number" id="fontNumberSize" min="7" max="28" step="0.5">
+      </div>
+    </div>
+
+    <span class="settings-divider"></span>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Axis length (longest protein)</div>
+      <div class="settings-row">
+        <input type="number" id="axisLengthValue" min="1" step="1" style="width:70px;">
+        <select id="axisLengthUnit" style="width:64px;">
+          <option value="px">px</option>
+          <option value="cm">cm</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <aside id="sidebar">
+      <div class="section-label">Proteins
+        <button id="btnAddProtein" class="icon-btn ghost">+ Add</button>
+      </div>
+      <div id="proteinList"></div>
+
+      <div id="editorPanel"></div>
+    </aside>
+
+    <section id="canvasSection">
+      <div id="canvasToolbar">
+        <span id="scaleInfo">—</span>
+        <span id="proteinCount">—</span>
+      </div>
+      <div id="canvasWrapper">
+        <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="startOverlay" class="open">
+  <div class="help-panel" style="max-width:540px;">
+    <div class="help-panel-header">
+      <h2>Domain Architect</h2>
+    </div>
+    <div class="help-panel-body">
+      <p>Load a worked example to see how the tool is used, or start with a blank canvas.</p>
+      <div id="startExampleButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 20px;"></div>
+      <button id="btnStartBlank" style="width:100%;">Start with a blank canvas</button>
+    </div>
+  </div>
+</div>
+
+<div id="helpOverlay">
+  <div class="help-panel">
+    <div class="help-panel-header">
+      <h2>Domain Architect — Read Me</h2>
+      <button id="btnHelpClose" class="icon-btn ghost" title="Close">✕</button>
+    </div>
+    <div class="help-panel-body">
+      <p>Single-file HTML tool for to-scale protein domain schematics.</p>
+
+      <h2>Layout</h2>
+      <ul>
+        <li>Header: global settings, import/export</li>
+        <li>Sidebar (left, scrolls independently): protein list + editor</li>
+        <li>Canvas (right): live diagram</li>
+      </ul>
+
+      <h2>Proteins (sidebar list)</h2>
+      <ul>
+        <li><strong>+ Add</strong>: new protein</li>
+        <li>Checkbox: show/hide in diagram</li>
+        <li>Click name: select for editing</li>
+        <li>↑ / ↓: reorder</li>
+        <li>⧉: duplicate</li>
+        <li>✕: delete</li>
+      </ul>
+
+      <h2>Protein editor</h2>
+      <ul>
+        <li><strong>Name</strong>, <strong>Length</strong> (aa)</li>
+        <li><strong>Show start/end residues on each domain</strong>: on/off</li>
+        <li><strong>Domain box</strong>: format appearance of protein domains (shape, corner radius, border style/width/colour)</li>
+        <li><strong>Coordinate axis</strong>: format appearance of the residue coordinate axis (colour, weight)</li>
+        <li><strong>Group labels</strong>: label groups of domains, or areas of the protein (e.g. "disordered region")</li>
+        <li><strong>Domains</strong>: annotate protein domains</li>
+        <li><strong>Motif marks</strong>: annotate regions of interest (e.g. a binding site within a domain)</li>
+        <li><strong>Annotations</strong>: annotate sites of interest (e.g. a residue, mutation, or interaction partner)</li>
+      </ul>
+      <p>Overlapping group labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
+
+      <h2>Global settings</h2>
+      <ul>
+        <li>Format text for protein names, domain names, annotations</li>
+        <li>Axis length: sets absolute horizontal width of longest displayed protein; other proteins are always scaled in relation to the longest one.</li>
+      </ul>
+
+      <h2>Import / Export (header)</h2>
+      <ul>
+        <li><strong>File name</strong>: base name for all exports</li>
+        <li><strong>Import…</strong>: load a <code>.json</code> file, replaces current diagram</li>
+        <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
+        <li><strong>Transparent background</strong>: checkbox, applies to SVG/PNG export</li>
+        <li><strong>Export SVG</strong>: vector</li>
+        <li><strong>Export PNG</strong>: raster</li>
+        <li><strong>Load example…</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, NRF2, SRC, TXN)</li>
+        <li><strong>Reset</strong>: clear to single blank protein</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- constants ----------
+  var PALETTE = ['#E8B4B8','#D9A066','#8FB8B0','#6B8CAE','#7A9B76','#A67C6D','#C9A66B','#9B8AA6'];
+  var INK = '#20211D';
+  var INK_SOFT = '#5C5A50';
+  var HAIRLINE = '#C9C3B2';
+
+  var FONT_OPTIONS = [
+    {label:'IBM Plex Sans', value:"'IBM Plex Sans',sans-serif"},
+    {label:'IBM Plex Serif', value:"'IBM Plex Serif',serif"},
+    {label:'IBM Plex Mono', value:"'IBM Plex Mono',monospace"},
+    {label:'Inter', value:"'Inter',sans-serif"},
+    {label:'Source Serif 4', value:"'Source Serif 4',serif"},
+    {label:'Space Grotesk', value:"'Space Grotesk',sans-serif"},
+    {label:'Courier Prime', value:"'Courier Prime',monospace"},
+    {label:'Georgia', value:"Georgia,serif"},
+    {label:'Arial', value:"Arial,Helvetica,sans-serif"}
+  ];
+
+  var DEFAULT_MARGIN_LEFT = 168;
+  var DEFAULT_MARGIN_RIGHT = 48;
+  var EDGE_BUFFER = 10; // extra breathing room beyond any measured text extent
+  var TOP_PADDING = 46;
+  var ROW_GAP = 30;
+  var LABEL_LANE_H = 26;
+  var LABEL_BOTTOM_PAD = 14;
+  var DOMAIN_H = 42;
+  var MARK_TAG_LANE_H = 16;
+  var ENDNUM_H = 16;
+  var ANNOT_ROW_H_BASE = 15;
+  var ANNOT_TEXT_GAP = 7;
+  var ANNOT_BASELINE_OFFSET = 9; // compensates for font ascent so the visible gap below the line matches the visible gap above it
+  var ANNOT_LINE_H = 14;
+  var PX_PER_CM = 37.7952755906; // CSS px, 96dpi
+
+  function getTrackWidthPx(){
+    var a = state.settings.axisLength;
+    var px = (a.unit === 'cm') ? (a.value * PX_PER_CM) : a.value;
+    if(!isFinite(px) || px <= 0) px = 1000;
+    return Math.max(100, Math.min(20000, px));
+  }
+
+  // ---------- state ----------
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  function newDomain(idx){
+    return {id:uid(), start:1, end:50, text:'Domain', color: PALETTE[(idx||0) % PALETTE.length]};
+  }
+  function newLabel(){ return {id:uid(), start:1, end:50, text:'Function'}; }
+  function newMark(){ return {id:uid(), start:1, end:5, text:'', color:'#B5555C'}; }
+  function newAnnotation(){ return {id:uid(), position:1, text:'Annotation'}; }
+  function newProtein(name, length){
+    return {
+      id:uid(), name:name||'New protein', length:length||300, offset:0, showDomainResidues:false, visible:true,
+      box: {shape:'rounded', radius:6, borderStyle:'solid', borderWidth:1.2, borderColor:'#4A4740'},
+      axis: {color:'#C9C3B2', weight:4},
+      labels:[], domains:[], marks:[], annotations:[]
+    };
+  }
+
+  function withProteinDefaults(p){
+    if(!p.box) p.box = {shape:'rounded', radius:6, borderStyle:'solid', borderWidth:1.2, borderColor:'#4A4740'};
+    if(!p.axis) p.axis = {color:'#C9C3B2', weight:4};
+    if(typeof p.showDomainResidues !== 'boolean') p.showDomainResidues = false;
+    if(typeof p.visible !== 'boolean') p.visible = true;
+    if(typeof p.offset !== 'number' || !isFinite(p.offset)) p.offset = 0;
+    return p;
+  }
+
+  var state = {
+    proteins: [newProtein('Protein 1', 400)],
+    activeProteinId: null,
+    settings: {
+      font: {
+        protein: {family: FONT_OPTIONS[3].value, size: 13},
+        domain:  {family: FONT_OPTIONS[3].value, size: 12.5},
+        number:  {family: FONT_OPTIONS[3].value, size: 11}
+      },
+      axisLength: {value: 1000, unit: 'px'}
+    }
+  };
+  state.activeProteinId = state.proteins[0].id;
+
+  function activeProtein(){
+    return state.proteins.find(function(p){ return p.id === state.activeProteinId; });
+  }
+
+  // ---------- example data ----------
+  // Rebuilt independently from UniProt Q16236 (NFE2L2_HUMAN, isoform 1, 605 aa) and
+  // supporting literature (Itoh et al. 1999; Tong et al. 2006; McMahon et al. 2004;
+  // Wikipedia's NFE2L2 summary; Kopacz et al. 2022, Free Radic Biol Med). Domain
+  // boundaries: Neh2 ~1-97 (KEAP1-binding, DLG 29-31 / ETGE 79-82 degrons), Neh4
+  // ~111-134 and Neh5 ~150-186 (CBP/Mediator-dependent transactivation), Neh7
+  // ~209-316 (RXRα-mediated repression), Neh6 ~338-390 (β-TrCP degrons DSGIS
+  // 343-347 / DSAPGS 382-387), Neh1 ~434-529 (CNC-bZIP; basic region 503-518,
+  // leucine zipper 525-539), Neh3 ~566-605 (C-terminal transactivation).
+  function buildExampleNRF2(){
+    return {
+      id: uid(), name: 'NRF2', length: 605,
+      labels: [
+        {id:uid(), start:111, end:186, text:'Transactivation (CBP / Mediator recruitment)'}
+      ],
+      domains: [
+        {id:uid(), start:1, end:97, text:'Neh2', color:'#8FB8B0'},
+        {id:uid(), start:111, end:134, text:'Neh4', color:'#A67C6D'},
+        {id:uid(), start:150, end:186, text:'Neh5', color:'#D9A066'},
+        {id:uid(), start:209, end:316, text:'Neh7', color:'#E8B4B8'},
+        {id:uid(), start:338, end:390, text:'Neh6', color:'#9B8AA6'},
+        {id:uid(), start:434, end:529, text:'Neh1', color:'#6B8CAE'},
+        {id:uid(), start:566, end:605, text:'Neh3', color:'#7A9B76'}
+      ],
+      marks: [
+        {id:uid(), start:29, end:31, text:'DLG', color:'#B5555C'},
+        {id:uid(), start:79, end:82, text:'ETGE', color:'#2B6777'},
+        {id:uid(), start:343, end:347, text:'DSGIS', color:'#B5555C'},
+        {id:uid(), start:382, end:387, text:'DSAPGS', color:'#2B6777'}
+      ],
+      annotations: [
+        {id:uid(), position:30, text:'KEAP1\np21'},
+        {id:uid(), position:120, text:'CBP / p300\nMED16 (Mediator)'},
+        {id:uid(), position:260, text:'RXRα'},
+        {id:uid(), position:365, text:'β-TrCP'},
+        {id:uid(), position:481, text:'small Maf (F/G/K)\np14ARF'},
+        {id:uid(), position:585, text:'CHD6\np14ARF'}
+      ]
+    };
+  }
+
+  // Boundaries after UniProt P00533 (EGFR_HUMAN, 1210 aa precursor numbering) and
+  // supporting literature: signal peptide 1-24, extracellular ligand-binding region
+  // ~25-645, single-pass transmembrane domain ~646-668, juxtamembrane region ~669-695,
+  // tyrosine kinase domain 696-1022, C-terminal tail 1023-1210 carrying the classic
+  // autophosphorylation/docking tyrosines (Y992, Y1045, Y1068, Y1086, Y1148, Y1173).
+  function buildExampleKinase(){
+    return {
+      id: uid(), name: 'EGFR', length: 1210,
+      labels: [],
+      domains: [
+        {id:uid(), start:25, end:645, text:'Ectodomain', color:'#E8B4B8'},
+        {id:uid(), start:646, end:668, text:'TM', color:'#D9A066'},
+        {id:uid(), start:669, end:695, text:'JM', color:'#8FB8B0'},
+        {id:uid(), start:696, end:1022, text:'Kinase domain', color:'#6B8CAE'},
+        {id:uid(), start:1023, end:1210, text:'C-tail', color:'#7A9B76'}
+      ],
+      marks: [
+        {id:uid(), start:992, end:992, text:'Y992', color:'#B5555C'},
+        {id:uid(), start:1045, end:1045, text:'Y1045', color:'#2B6777'},
+        {id:uid(), start:1068, end:1068, text:'Y1068', color:'#B5555C'},
+        {id:uid(), start:1086, end:1086, text:'Y1086', color:'#2B6777'},
+        {id:uid(), start:1148, end:1148, text:'Y1148', color:'#B5555C'},
+        {id:uid(), start:1173, end:1173, text:'Y1173', color:'#2B6777'}
+      ],
+      annotations: [
+        {id:uid(), position:300, text:'EGF / TGF-α\n(ligand)'},
+        {id:uid(), position:850, text:'ATP\n(catalytic site)'},
+        {id:uid(), position:1045, text:'Cbl\n(ubiquitination)'},
+        {id:uid(), position:1068, text:'Grb2'},
+        {id:uid(), position:1086, text:'Shc'},
+        {id:uid(), position:1173, text:'PLCγ1'}
+      ]
+    };
+  }
+
+  // Boundaries after commonly cited UniProt/literature domain map for HIF-1α
+  // (Q16665, 826 aa): bHLH ~17-72, PAS-A ~85-158, PAS-B ~228-298, ODD ~401-603
+  // (containing N-TAD ~531-575 and the VHL-hydroxylation sites Pro402/Pro564),
+  // C-TAD 786-826 (Asn803 hydroxylation blocks p300/CBP via FIH-1).
+  function buildExampleHIF1A(){
+    return {
+      id: uid(), name: 'HIF-1α', length: 826,
+      labels: [
+        {id:uid(), start:85, end:298, text:'ARNT heterodimerization (PAS-A / PAS-B)'}
+      ],
+      domains: [
+        {id:uid(), start:17, end:72, text:'bHLH', color:'#E8B4B8'},
+        {id:uid(), start:85, end:158, text:'PAS-A', color:'#D9A066'},
+        {id:uid(), start:228, end:298, text:'PAS-B', color:'#C9A66B'},
+        {id:uid(), start:401, end:603, text:'ODD', color:'#6B8CAE'},
+        {id:uid(), start:786, end:826, text:'C-TAD', color:'#A67C6D'}
+      ],
+      marks: [
+        {id:uid(), start:402, end:402, text:'P402', color:'#B5555C'},
+        {id:uid(), start:531, end:575, text:'N-TAD', color:'#2B6777'},
+        {id:uid(), start:564, end:564, text:'P564', color:'#B5555C'},
+        {id:uid(), start:803, end:803, text:'N803', color:'#2B6777'}
+      ],
+      annotations: [
+        {id:uid(), position:45, text:'ARNT (HIF-1β)\nDNA (HRE)'},
+        {id:uid(), position:500, text:'pVHL-Elongin C\n(hydroxy-Pro402/564)'},
+        {id:uid(), position:805, text:'p300 / CBP\nFIH-1 (inhibitory)'}
+      ]
+    };
+  }
+
+  // Boundaries after UniProt P12931 (SRC_HUMAN, 536 aa) and standard c-Src domain
+  // literature: SH4/myristoylation + unique region 1-83, SH3 84-145, SH2 151-248,
+  // SH2-kinase linker 249-269, tyrosine kinase (SH1) domain 270-523, C-terminal
+  // regulatory tail 524-536. Activation-loop autophosphorylation at Tyr419
+  // (activating) and CSK-mediated phosphorylation of the C-terminal Tyr530
+  // (inhibitory, docks onto the SH2 domain to lock the kinase closed).
+  function buildExampleSRC(){
+    return {
+      id: uid(), name: 'SRC', length: 536,
+      labels: [],
+      domains: [
+        {id:uid(), start:1, end:83, text:'Unique', color:'#D9A066'},
+        {id:uid(), start:84, end:145, text:'SH3', color:'#8FB8B0'},
+        {id:uid(), start:151, end:248, text:'SH2', color:'#E8B4B8'},
+        {id:uid(), start:270, end:523, text:'Kinase domain', color:'#6B8CAE'},
+        {id:uid(), start:524, end:536, text:'C-tail', color:'#A67C6D'}
+      ],
+      marks: [
+        {id:uid(), start:2, end:2, text:'G2 (myristoyl)', color:'#2B6777'},
+        {id:uid(), start:419, end:419, text:'Y419', color:'#B5555C'},
+        {id:uid(), start:530, end:530, text:'Y530', color:'#2B6777'}
+      ],
+      annotations: [
+        {id:uid(), position:115, text:'AFAP1\n(proline-rich ligands)'},
+        {id:uid(), position:200, text:'pTyr substrates\n(FAK, PDGFR)'},
+        {id:uid(), position:400, text:'ATP\n(catalytic site)'},
+        {id:uid(), position:530, text:'CSK\n(inhibitory phosphorylation)'}
+      ]
+    };
+  }
+
+  // Class VI TRIM (TIF1) family comparison: TRIM24/TIF1α (O15164, 1050 aa),
+  // TRIM28/TIF1β/KAP1 (Q13263, 835 aa), and TRIM33/TIF1γ (Q9UPN9, 1120 aa) share
+  // the same N-terminal RBCC (RING-B-box-coiled-coil) and a C-terminal tandem
+  // PHD-bromodomain histone-reader cassette, but recruit different partners at
+  // each — a useful side-by-side comparison (Herquet et al. 2011; Appikonda et al.
+  // 2018; Xi et al. 2011; Tsai et al. 2010; class VI TRIM structural reviews).
+  // TRIM66/TIF1δ is a fourth family member but is omitted here since its domain
+  // boundaries aren't as consistently reported. RBCC / PHD / Bromo boundaries are
+  // approximate structural-model regions (the combined PHD-Bromo cassette range is
+  // better sourced than the individual PHD/Bromo split shown here), not exact
+  // Pfam/InterPro calls. TRIM24's LXXLL nuclear-receptor-box motif sits in the
+  // middle domain just before the PHD-Bromo cassette (Tsai et al. 2010; Kim et al.
+  // 2019); the exact residue numbers for it are approximate.
+  function buildTrim24(){
+    return {
+      id: uid(), name: 'TRIM24', length: 1050,
+      labels: [],
+      domains: [
+        {id:uid(), start:47, end:425, text:'RBCC', color:'#E8B4B8'},
+        {id:uid(), start:823, end:873, text:'PHD', color:'#9B8AA6'},
+        {id:uid(), start:880, end:1006, text:'Bromo', color:'#7A9B76'}
+      ],
+      marks: [
+        {id:uid(), start:738, end:742, text:'LXXLL (NR box)', color:'#B5555C'}
+      ],
+      annotations: [
+        {id:uid(), position:200, text:'p53\n(negative regulation)'},
+        {id:uid(), position:740, text:'Nuclear receptors\n(AR, ERα)'},
+        {id:uid(), position:950, text:'Histone H3\n(K23ac)'}
+      ]
+    };
+  }
+  function buildTrim28(){
+    return {
+      id: uid(), name: 'TRIM28', length: 835,
+      labels: [],
+      domains: [
+        {id:uid(), start:56, end:405, text:'RBCC', color:'#E8B4B8'},
+        {id:uid(), start:625, end:675, text:'PHD', color:'#9B8AA6'},
+        {id:uid(), start:680, end:810, text:'Bromo', color:'#7A9B76'}
+      ],
+      marks: [],
+      annotations: [
+        {id:uid(), position:200, text:'KRAB zinc-finger TFs'},
+        {id:uid(), position:490, text:'HP1α / β / γ\n(heterochromatin)'},
+        {id:uid(), position:740, text:'SETDB1\n(H3K9me3)'}
+      ]
+    };
+  }
+  function buildTrim33Family(){
+    return {
+      id: uid(), name: 'TRIM33', length: 1120,
+      labels: [],
+      domains: [
+        {id:uid(), start:116, end:478, text:'RBCC', color:'#E8B4B8'},
+        {id:uid(), start:977, end:1025, text:'PHD', color:'#9B8AA6'},
+        {id:uid(), start:1032, end:1120, text:'Bromo', color:'#7A9B76'}
+      ],
+      marks: [],
+      annotations: [
+        {id:uid(), position:200, text:'Smad4, TβRI\nβ-catenin'},
+        {id:uid(), position:700, text:'Smad2 / Smad3\n(activated)'},
+        {id:uid(), position:1070, text:'Histone H3\n(K9me3 / K18ac)'}
+      ]
+    };
+  }
+  function buildExampleClassVITrim(){
+    return {
+      groupName: 'Class VI TRIM family',
+      proteins: [buildTrim24(), buildTrim28(), buildTrim33Family()]
+    };
+  }
+
+  // Boundaries after UniProt P10599 (THIO_HUMAN / TXN, 105 aa) and thioredoxin
+  // literature: a single thioredoxin fold spans essentially the whole protein,
+  // built around the redox-active WCGPC active site (Cys32/Cys35), plus three
+  // additional structural/regulatory cysteines (Cys62, Cys69, Cys73) not present
+  // in bacterial thioredoxins. TXN is a small, single-domain contrast to the other
+  // multidomain examples, with several close-set functional cysteines.
+  function buildExampleTXN(){
+    return {
+      id: uid(), name: 'TXN', length: 105,
+      labels: [],
+      domains: [
+        {id:uid(), start:1, end:105, text:'Thioredoxin domain', color:'#6B8CAE'}
+      ],
+      marks: [
+        {id:uid(), start:32, end:35, text:'C32/C35 (active site)', color:'#B5555C'},
+        {id:uid(), start:62, end:62, text:'C62', color:'#2B6777'},
+        {id:uid(), start:69, end:69, text:'C69', color:'#2B6777'},
+        {id:uid(), start:73, end:73, text:'C73', color:'#2B6777'}
+      ],
+      annotations: [
+        {id:uid(), position:20, text:'TXNRD1\n(reductase)'},
+        {id:uid(), position:33, text:'ASK1 (MAP3K5)'},
+        {id:uid(), position:40, text:'TXNIP'},
+        {id:uid(), position:65, text:'Peroxiredoxins\n(PRDX1-6)'},
+        {id:uid(), position:90, text:'Ribonucleotide\nreductase'}
+      ]
+    };
+  }
+
+  var EXAMPLE_BUILDERS = {
+    classvitrim: buildExampleClassVITrim,
+    nrf2: buildExampleNRF2,
+    egfr: buildExampleKinase,
+    hif1a: buildExampleHIF1A,
+    src: buildExampleSRC,
+    txn: buildExampleTXN
+  };
+
+  function loadExampleByKey(key){
+    var builder = EXAMPLE_BUILDERS[key];
+    if(!builder) return;
+    var result = builder();
+    var isGroup = result && Array.isArray(result.proteins);
+    var proteins = (isGroup ? result.proteins : [result]).map(withProteinDefaults);
+    state.proteins = proteins;
+    state.activeProteinId = proteins[0].id;
+    var baseName = isGroup ? result.groupName : proteins[0].name;
+    var fnInput = document.getElementById('exportFileName');
+    if(fnInput) fnInput.value = baseName.replace(/[^a-z0-9]+/gi, '-').replace(/(^-+|-+$)/g, '').toLowerCase() + '-domain-architecture';
+    render();
+  }
+
+  // ---------- DOM refs ----------
+  var proteinListEl = document.getElementById('proteinList');
+  var editorPanelEl = document.getElementById('editorPanel');
+  var svgEl = document.getElementById('canvas');
+  var scaleInfoEl = document.getElementById('scaleInfo');
+  var proteinCountEl = document.getElementById('proteinCount');
+
+  // ---------- settings panel init ----------
+  function populateFontSelect(sel){
+    sel.innerHTML = '';
+    FONT_OPTIONS.forEach(function(f){
+      var o = document.createElement('option');
+      o.value = f.value; o.textContent = f.label;
+      sel.appendChild(o);
+    });
+  }
+  var selProteinFamily = document.getElementById('fontProteinFamily');
+  var selDomainFamily = document.getElementById('fontDomainFamily');
+  var selNumberFamily = document.getElementById('fontNumberFamily');
+  [selProteinFamily, selDomainFamily, selNumberFamily].forEach(populateFontSelect);
+
+  var numProteinSize = document.getElementById('fontProteinSize');
+  var numDomainSize = document.getElementById('fontDomainSize');
+  var numNumberSize = document.getElementById('fontNumberSize');
+  var numAxisLengthValue = document.getElementById('axisLengthValue');
+  var selAxisLengthUnit = document.getElementById('axisLengthUnit');
+
+  function syncSettingsControls(){
+    var s = state.settings;
+    selProteinFamily.value = s.font.protein.family;
+    numProteinSize.value = s.font.protein.size;
+    selDomainFamily.value = s.font.domain.family;
+    numDomainSize.value = s.font.domain.size;
+    selNumberFamily.value = s.font.number.family;
+    numNumberSize.value = s.font.number.size;
+    numAxisLengthValue.value = s.axisLength.value;
+    selAxisLengthUnit.value = s.axisLength.unit;
+  }
+  syncSettingsControls();
+
+  document.getElementById('settingsPanel').addEventListener('input', function(){
+    var s = state.settings;
+    s.font.protein.family = selProteinFamily.value;
+    s.font.protein.size = parseFloat(numProteinSize.value) || 13;
+    s.font.domain.family = selDomainFamily.value;
+    s.font.domain.size = parseFloat(numDomainSize.value) || 12.5;
+    s.font.number.family = selNumberFamily.value;
+    s.font.number.size = parseFloat(numNumberSize.value) || 11;
+    s.axisLength.value = parseFloat(numAxisLengthValue.value) || 1000;
+    s.axisLength.unit = selAxisLengthUnit.value;
+    renderCanvas();
+  });
+
+  var helpOverlay = document.getElementById('helpOverlay');
+  function openHelp(){ helpOverlay.classList.add('open'); }
+  function closeHelp(){ helpOverlay.classList.remove('open'); }
+  document.getElementById('btnHelp').addEventListener('click', openHelp);
+  document.getElementById('btnHelpClose').addEventListener('click', closeHelp);
+  helpOverlay.addEventListener('click', function(e){
+    if(e.target === helpOverlay) closeHelp();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && helpOverlay.classList.contains('open')) closeHelp();
+  });
+
+  var startOverlay = document.getElementById('startOverlay');
+  function closeStart(){ startOverlay.classList.remove('open'); }
+  var startButtonsEl = document.getElementById('startExampleButtons');
+  Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
+    if(!opt.value) return;
+    var btn = document.createElement('button');
+    btn.className = 'ghost';
+    btn.textContent = opt.textContent;
+    btn.addEventListener('click', function(){
+      loadExampleByKey(opt.value);
+      closeStart();
+    });
+    startButtonsEl.appendChild(btn);
+  });
+  document.getElementById('btnStartBlank').addEventListener('click', closeStart);
+  startOverlay.addEventListener('click', function(e){
+    if(e.target === startOverlay) closeStart();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && startOverlay.classList.contains('open')) closeStart();
+  });
+
+  // ---------- rendering: sidebar ----------
+  function renderSidebar(){
+    proteinListEl.innerHTML = '';
+    state.proteins.forEach(function(p, idx){
+      var chip = document.createElement('div');
+      chip.className = 'chip' + (p.id === state.activeProteinId ? ' active' : '') + (p.visible === false ? ' hidden-protein' : '');
+      chip.dataset.chip = p.id;
+      chip.innerHTML =
+        '<input type="checkbox" class="chip-visible" data-action="toggle-visible" data-protein="'+p.id+'" title="Show in diagram" '+(p.visible!==false?'checked':'')+'>' +
+        '<span class="chip-name">'+escapeHtml(p.name)+'</span>' +
+        '<span class="chip-len">'+p.length+' aa</span>' +
+        '<span class="chip-actions">' +
+          '<button class="icon-btn ghost" data-action="move-protein-up" data-protein="'+p.id+'" '+(idx===0?'disabled':'')+' title="Move up">↑</button>' +
+          '<button class="icon-btn ghost" data-action="move-protein-down" data-protein="'+p.id+'" '+(idx===state.proteins.length-1?'disabled':'')+' title="Move down">↓</button>' +
+          '<button class="icon-btn ghost" data-action="duplicate-protein" data-protein="'+p.id+'" title="Duplicate">⧉</button>' +
+          '<button class="icon-btn danger-text" data-action="remove-protein" data-protein="'+p.id+'" title="Remove" '+(state.proteins.length===1?'disabled':'')+'>✕</button>' +
+        '</span>';
+      chip.addEventListener('click', function(e){
+        if(e.target.closest('button')) return;
+        if(e.target.classList.contains('chip-visible')) return;
+        state.activeProteinId = p.id;
+        render();
+      });
+      chip.querySelector('.chip-visible').addEventListener('change', function(e){
+        p.visible = e.target.checked;
+        chip.classList.toggle('hidden-protein', !p.visible);
+        renderCanvas();
+      });
+      proteinListEl.appendChild(chip);
+    });
+
+    var p = activeProtein();
+    if(!p){ editorPanelEl.innerHTML=''; return; }
+
+    var html = '';
+
+    html += '<div class="section-label">Protein details</div>';
+    html += '<div class="field-row"><label>Name</label><input type="text" data-section="protein" data-field="name" data-protein="'+p.id+'" value="'+escapeAttr(p.name)+'"></div>';
+    html += '<div class="field-row"><label>Length</label><input type="number" min="1" data-section="protein" data-field="length" data-protein="'+p.id+'" value="'+p.length+'"></div>';
+    html += '<div class="field-row"><label>Offset</label><input type="number" step="1" style="max-width:90px;" data-section="protein" data-field="offset" data-protein="'+p.id+'" value="'+(p.offset||0)+'">' +
+      '<button class="icon-btn ghost" data-action="nudge-left" data-protein="'+p.id+'" title="Nudge left 10 residues">←</button>' +
+      '<button class="icon-btn ghost" data-action="nudge-right" data-protein="'+p.id+'" title="Nudge right 10 residues">→</button></div>';
+    html += '<div class="field-row"><label>Range</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="protein" data-field="showDomainResidues" data-protein="'+p.id+'" '+(p.showDomainResidues?'checked':'')+'> Show start/end residues on each domain</label></div>';
+
+    html += '<div class="section-label">Domain box</div>';
+    html += '<div class="field-row"><label>Shape</label><select data-section="box" data-field="shape" data-protein="'+p.id+'">' +
+      '<option value="rect"'+(p.box.shape==='rect'?' selected':'')+'>Rectangle</option>' +
+      '<option value="rounded"'+(p.box.shape==='rounded'?' selected':'')+'>Rounded rectangle</option>' +
+      '<option value="pill"'+(p.box.shape==='pill'?' selected':'')+'>Pill / stadium</option>' +
+      '</select></div>';
+    html += '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="box" data-field="radius" data-protein="'+p.id+'" value="'+p.box.radius+'"></div>';
+    html += '<div class="field-row"><label>Border</label><select data-section="box" data-field="borderStyle" data-protein="'+p.id+'">' +
+      '<option value="solid"'+(p.box.borderStyle==='solid'?' selected':'')+'>Solid</option>' +
+      '<option value="dashed"'+(p.box.borderStyle==='dashed'?' selected':'')+'>Dashed</option>' +
+      '<option value="none"'+(p.box.borderStyle==='none'?' selected':'')+'>None</option>' +
+      '</select></div>';
+    html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
+      '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
+
+    html += '<div class="section-label">Coordinate axis</div>';
+    html += '<div class="field-row"><label>Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="axis" data-field="color" data-protein="'+p.id+'" value="'+p.axis.color+'">' +
+      '<label style="width:auto;margin-left:8px;">Weight</label><input type="number" min="1" max="12" step="0.5" style="max-width:64px;" data-section="axis" data-field="weight" data-protein="'+p.id+'" value="'+p.axis.weight+'"></div>';
+
+    html += sectionTable('Group labels', p.id, 'label', p.labels, [
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
+    ], 'Spans of text above the domain row, e.g. a shared functional annotation.');
+
+    html += sectionTable('Domains', p.id, 'domain', p.domains, [
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
+    ], 'Boxes drawn to scale along the backbone.');
+
+    html += sectionTable('Motif marks', p.id, 'mark', p.marks, [
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Tag (optional)'}, {field:'color', type:'color'}
+    ], 'Thin highlighted bars inside domains, e.g. short linear motifs.');
+
+    html += sectionTable('Annotations', p.id, 'annotation', p.annotations, [
+      {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text (newline = new line)'}
+    ], 'Lines with labels below the backbone, e.g. binding partners.');
+
+    editorPanelEl.innerHTML = html;
+  }
+
+  function sectionTable(title, proteinId, section, items, columns, hint){
+    var h = '<div class="section-label">'+title+'</div>';
+    if(items.length === 0){
+      h += '<div class="empty-note">'+hint+'</div>';
+    } else {
+      h += '<table class="item-table"><thead><tr>';
+      columns.forEach(function(c){ h += '<th>'+(c.label || capitalize(c.field))+'</th>'; });
+      h += '<th></th></tr></thead><tbody>';
+      items.forEach(function(item){
+        h += '<tr>';
+        columns.forEach(function(c){
+          var val = item[c.field];
+          if(c.type === 'number'){
+            h += '<td><input type="number" style="width:'+(c.width||56)+'px" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+val+'"></td>';
+          } else if(c.type === 'color'){
+            h += '<td><input type="color" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+val+'"></td>';
+          } else if(c.type === 'textarea'){
+            h += '<td><textarea data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'">'+escapeHtml(val)+'</textarea></td>';
+          } else {
+            h += '<td><input type="text" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+escapeAttr(val)+'"></td>';
+          }
+        });
+        h += '<td><button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove">✕</button></td>';
+        h += '</tr>';
+      });
+      h += '</tbody></table>';
+    }
+    h += '<button class="add-row-btn" data-action="add-'+section+'" data-protein="'+proteinId+'">+ Add '+title.toLowerCase().replace(/s$/,'')+'</button>';
+    return h;
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'&#10;'); }
+  function escapeAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+  // ---------- rendering: SVG canvas ----------
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs){
+    var e = document.createElementNS(NS, tag);
+    for(var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+  function text(x, y, str, attrs){
+    var t = el('text', Object.assign({x:x, y:y}, attrs||{}));
+    t.textContent = str;
+    return t;
+  }
+  function multilineText(x, yStart, str, attrs, lineHeight){
+    var g = el('g', {});
+    var lines = String(str).split('\n');
+    lines.forEach(function(line, i){
+      g.appendChild(text(x, yStart + i*lineHeight, line, attrs));
+    });
+    return g;
+  }
+
+  function globalMaxLength(proteins){
+    var m = 50;
+    proteins.forEach(function(p){ if(p.length > m) m = p.length; });
+    return m;
+  }
+
+  // Decide which side (above/below the backbone) each annotation renders on.
+  // Default is 'below'; an annotation flips to the opposite side of its immediate
+  // neighbour (in x-order) whenever their estimated label widths would overlap.
+  function textHalfWidth(str, fontSize){
+    var len = Math.max(1, String(str).length);
+    return Math.max(8, (len * fontSize * 0.6) / 2) + 4;
+  }
+
+  function overlaps(ax, aHalf, bx, bHalf){
+    return Math.abs(ax - bx) < (aHalf + bHalf);
+  }
+
+  // Lane assignment for the end-number row: the protein's own '1'/length labels are
+  // independent items, but a domain's start+end residue labels (when shown) are kept
+  // together as a pair — if either one would collide with a neighbour, the whole pair
+  // moves down to the next lane together, rather than splitting apart.
+  function assignEndNumberLanes(p, xFn, numberFontSize){
+    function mkItem(ax, text){
+      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontSize)};
+    }
+    var groups = [
+      [mkItem(xFn(0), '1')],
+      [mkItem(xFn(p.length), String(p.length))]
+    ];
+    if(p.showDomainResidues){
+      p.domains.forEach(function(d){
+        groups.push([mkItem(xFn(d.start-1), String(d.start)), mkItem(xFn(d.end), String(d.end))]);
+      });
+    }
+    groups.forEach(function(g){
+      g.minX = Math.min.apply(null, g.map(function(i){ return i.ax - i.halfWidth; }));
+      g.maxX = Math.max.apply(null, g.map(function(i){ return i.ax + i.halfWidth; }));
+    });
+    groups.sort(function(a,b){ return a.minX - b.minX; });
+    var laneEnds = [];
+    groups.forEach(function(g){
+      var placed = false;
+      for(var i=0; i<laneEnds.length; i++){
+        if(g.minX > laneEnds[i] + 8){
+          laneEnds[i] = g.maxX;
+          g.forEach(function(item){ item.lane = i; });
+          placed = true;
+          break;
+        }
+      }
+      if(!placed){
+        var lane = laneEnds.length;
+        laneEnds.push(g.maxX);
+        g.forEach(function(item){ item.lane = lane; });
+      }
+    });
+    var items = [].concat.apply([], groups);
+    return {items: items, numLanes: laneEnds.length};
+  }
+
+  // Structural row(s) below the domain: always the end-number row, which also carries
+  // per-domain start/end residue obstacles when that option is enabled, stacked into
+  // lanes when they'd otherwise collide.
+  function belowRows(p, xFn, numberFontSize){
+    var endNumberLaneInfo = assignEndNumberLanes(p, xFn, numberFontSize);
+    var obstacles = endNumberLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
+    var rows = [{name:'endnum', height:endNumberLaneInfo.numLanes * ENDNUM_H, obstacles:obstacles}];
+    return {rows:rows, endNumberLaneInfo:endNumberLaneInfo};
+  }
+
+  // Greedy interval-scheduling lane assignment for motif tags: tags whose estimated
+  // text width would overlap are stacked into separate lanes instead of drawing on top.
+  function assignMarkTagLanes(p, xFn, numberFontSize){
+    var items = p.marks.filter(function(m){ return m.text && m.text.trim().length; }).map(function(m){
+      var ax = xFn(m.start-1) + Math.max(2.5, xFn(m.end)-xFn(m.start-1))/2;
+      return {mark:m, ax:ax, halfWidth:textHalfWidth(m.text, numberFontSize)};
+    });
+    items.sort(function(a,b){ return a.ax - b.ax; });
+    var laneEnds = [];
+    items.forEach(function(item){
+      var placed = false;
+      for(var i=0; i<laneEnds.length; i++){
+        if((item.ax - item.halfWidth) > laneEnds[i] + 8){
+          laneEnds[i] = item.ax + item.halfWidth;
+          item.lane = i;
+          placed = true;
+          break;
+        }
+      }
+      if(!placed){
+        item.lane = laneEnds.length;
+        laneEnds.push(item.ax + item.halfWidth);
+      }
+    });
+    return {items: items, numLanes: laneEnds.length};
+  }
+
+  // Structural row(s) above the domain: plain motif-tag text (no connector line),
+  // sitting directly above the box, stacked into lanes when tags would collide.
+  function aboveRows(p, xFn, numberFontSize){
+    var markLaneInfo = assignMarkTagLanes(p, xFn, numberFontSize);
+    var hasMarkText = markLaneInfo.items.length > 0;
+    var rows = [];
+    if(hasMarkText){
+      var obstacles = markLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
+      rows.push({name:'marktag', height:markLaneInfo.numLanes * MARK_TAG_LANE_H, obstacles:obstacles});
+    }
+    return {rows:rows, hasMarkText:hasMarkText, markLaneInfo:markLaneInfo};
+  }
+
+  function clearanceFor(item, rows){
+    var cumulative = 0, required = 0;
+    rows.forEach(function(row){
+      cumulative += row.height;
+      var hit = row.obstacles.some(function(o){ return overlaps(item.ax, item.halfWidth, o.ax, o.halfWidth); });
+      if(hit) required = cumulative;
+    });
+    return required;
+  }
+
+  function classifyAnnotations(p, xFn, fontSize, numberFontSize){
+    var approxCharW = fontSize * 0.58;
+    var belowInfo = belowRows(p, xFn, numberFontSize);
+    var aboveInfo = aboveRows(p, xFn, numberFontSize);
+
+    var items = p.annotations.map(function(a){
+      var lines = String(a.text||'').split('\n');
+      var maxLineLen = lines.reduce(function(m,l){ return Math.max(m, l.length); }, 1);
+      return {
+        ann: a,
+        ax: xFn(a.position),
+        halfWidth: Math.max(10, (maxLineLen * approxCharW) / 2) + 6,
+        lineCount: lines.length
+      };
+    });
+    items.sort(function(a,b){ return a.ax - b.ax; });
+    var prev = null;
+    items.forEach(function(item){
+      if(prev && (item.ax - item.halfWidth) < (prev.ax + prev.halfWidth)){
+        item.side = (prev.side === 'below') ? 'above' : 'below';
+      } else {
+        item.side = 'below';
+      }
+      prev = item;
+    });
+
+    // dynamic line length on both sides: default is short and equal; only extend
+    // past whichever structural row(s) this annotation's x-position actually overlaps
+    items.forEach(function(item){
+      if(item.side === 'below'){
+        item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, belowInfo.rows);
+      } else {
+        item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, aboveInfo.rows);
+      }
+    });
+
+    var below = items.filter(function(i){ return i.side === 'below'; });
+    var above = items.filter(function(i){ return i.side === 'above'; });
+    return {below:below, above:above, hasMarkText:aboveInfo.hasMarkText, belowRows:belowInfo.rows, aboveRows:aboveInfo.rows, markLaneInfo:aboveInfo.markLaneInfo, endNumberLaneInfo:belowInfo.endNumberLaneInfo};
+  }
+
+  function regionExtent(items, includeAscentOffset){
+    var maxExtent = 0;
+    items.forEach(function(item){
+      var extent = item.lineLength + ANNOT_TEXT_GAP + (includeAscentOffset ? ANNOT_BASELINE_OFFSET : 0) + item.lineCount * ANNOT_LINE_H;
+      if(extent > maxExtent) maxExtent = extent;
+    });
+    return maxExtent;
+  }
+
+  // above region has to fit both the motif-tag row (always drawn, if present) and
+  // whichever above-annotation line+text reaches furthest
+  function aboveRegionHeight(cls){
+    var structural = cls.aboveRows.reduce(function(sum, r){ return sum + r.height; }, 0);
+    return Math.max(structural, regionExtent(cls.above, false));
+  }
+
+  // below region has to fit both the end-number row (always drawn) and whichever
+  // below-annotation line+text reaches furthest
+  function belowRegionHeight(cls){
+    var structural = cls.belowRows.reduce(function(sum, r){ return sum + r.height; }, 0);
+    return Math.max(structural, regionExtent(cls.below, true));
+  }
+
+  // Greedy interval-scheduling lane assignment: group labels whose x-ranges would
+  // overlap are stacked into separate lanes instead of drawing on top of each other.
+  function assignLabelLanes(p, xFn, domainFontSize){
+    var items = p.labels.map(function(l){
+      var x1 = xFn(l.start), x2 = xFn(Math.max(l.end, l.start));
+      var cx = (x1 + x2) / 2;
+      var textHalf = textHalfWidth(l.text, domainFontSize);
+      // collision uses whichever is wider: the underline span or the rendered text,
+      // since a long label over a narrow domain range overflows its underline
+      var effX1 = Math.min(x1, cx - textHalf);
+      var effX2 = Math.max(x2, cx + textHalf);
+      return {label:l, x1:x1, x2:x2, effX1:effX1, effX2:effX2};
+    });
+    items.sort(function(a,b){ return a.effX1 - b.effX1; });
+    var laneEnds = [];
+    items.forEach(function(item){
+      var placed = false;
+      for(var i=0; i<laneEnds.length; i++){
+        if(item.effX1 > laneEnds[i] + 8){
+          laneEnds[i] = item.effX2;
+          item.lane = i;
+          placed = true;
+          break;
+        }
+      }
+      if(!placed){
+        item.lane = laneEnds.length;
+        laneEnds.push(item.effX2);
+      }
+    });
+    return {items: items, numLanes: laneEnds.length};
+  }
+
+  function labelsRegionHeight(labelLayout){
+    return labelLayout.numLanes ? (labelLayout.numLanes * LABEL_LANE_H + LABEL_BOTTOM_PAD) : 0;
+  }
+
+  function proteinBlockHeight(p, classification, labelLayout){
+    var h = 0;
+    h += labelsRegionHeight(labelLayout);
+    h += aboveRegionHeight(classification);
+    h += DOMAIN_H;
+    h += belowRegionHeight(classification);
+    h += ROW_GAP;
+    return h;
+  }
+
+  function boxShapeAttrs(b){
+    var r = 0;
+    if(b.shape === 'rounded') r = Math.min(b.radius, DOMAIN_H/2);
+    if(b.shape === 'pill') r = DOMAIN_H/2;
+    return {rx:r, ry:r};
+  }
+  function boxBorderAttrs(b){
+    if(b.borderStyle === 'none') return {stroke:'none'};
+    var a = {stroke:b.borderColor, 'stroke-width':b.borderWidth};
+    if(b.borderStyle === 'dashed') a['stroke-dasharray'] = (b.borderWidth*3)+','+(b.borderWidth*2.2);
+    return a;
+  }
+
+  // Measures every text element (group labels, motif tags, domain names, end/residue
+  // numbers, annotations, and the right-anchored protein name) against a zero-margin
+  // baseline, and returns however much left/right canvas padding is needed so nothing
+  // gets clipped — independent of the axis-length setting, which only controls the
+  // backbone's own width.
+  function computeRequiredMargins(proteins, pxPerRes, trackWidth, fProtein, fDomain, fNumber){
+    var proteinSize = parseFloat(fProtein.size) || 12;
+    var domainSize = parseFloat(fDomain.size) || 12.5;
+    var numberSize = parseFloat(fNumber.size) || 11;
+    var baseX0 = function(pos){ return pos * pxPerRes; };
+
+    var minX = 0;
+    var maxX = trackWidth;
+    function widen(center, half){
+      if(center - half < minX) minX = center - half;
+      if(center + half > maxX) maxX = center + half;
+    }
+
+    proteins.forEach(function(p){
+      var off = p.offset || 0;
+      var x0 = function(pos){ return baseX0(pos + off); };
+
+      // protein name: right-anchored 10px before the track, independent of scale
+      // and of this protein's offset (names stay in a fixed left-hand column)
+      var nameFullWidth = textHalfWidth(p.name, proteinSize) * 2;
+      var nameLeftEdge = -10 - nameFullWidth;
+      if(nameLeftEdge < minX) minX = nameLeftEdge;
+
+      assignLabelLanes(p, x0, domainSize).items.forEach(function(item){
+        if(item.effX1 < minX) minX = item.effX1;
+        if(item.effX2 > maxX) maxX = item.effX2;
+      });
+
+      p.domains.forEach(function(d){
+        var cx = (x0(d.start-1) + x0(d.end)) / 2;
+        widen(cx, textHalfWidth(d.text, domainSize));
+      });
+
+      assignMarkTagLanes(p, x0, numberSize).items.forEach(function(item){
+        widen(item.ax, item.halfWidth);
+      });
+
+      widen(x0(0), textHalfWidth('1', numberSize));
+      widen(x0(p.length), textHalfWidth(String(p.length), numberSize));
+      if(p.showDomainResidues){
+        p.domains.forEach(function(d){
+          widen(x0(d.start-1), textHalfWidth(String(d.start), numberSize));
+          widen(x0(d.end), textHalfWidth(String(d.end), numberSize));
+        });
+      }
+
+      var cls = classifyAnnotations(p, x0, proteinSize, numberSize);
+      cls.below.concat(cls.above).forEach(function(item){
+        widen(item.ax, item.halfWidth);
+      });
+    });
+
+    var extraLeft = Math.max(0, -minX) + EDGE_BUFFER;
+    var extraRight = Math.max(0, maxX - trackWidth) + EDGE_BUFFER;
+
+    return {
+      left: Math.max(DEFAULT_MARGIN_LEFT, extraLeft),
+      right: Math.max(DEFAULT_MARGIN_RIGHT, extraRight)
+    };
+  }
+
+  function renderCanvas(){
+    while(svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+
+    var visibleProteins = state.proteins.filter(function(p){ return p.visible !== false; });
+
+    var TRACK_WIDTH = getTrackWidthPx();
+    var maxLen = globalMaxLength(visibleProteins);
+    var pxPerRes = TRACK_WIDTH / maxLen;
+
+    var fProtein = state.settings.font.protein;
+    var fDomain = state.settings.font.domain;
+    var fNumber = state.settings.font.number;
+
+    var margins = computeRequiredMargins(visibleProteins, pxPerRes, TRACK_WIDTH, fProtein, fDomain, fNumber);
+    var MARGIN_LEFT = margins.left;
+    var MARGIN_RIGHT = margins.right;
+    var SVG_WIDTH = MARGIN_LEFT + TRACK_WIDTH + MARGIN_RIGHT;
+    var x = function(pos){ return MARGIN_LEFT + pos * pxPerRes; };
+    var xFor = function(p){
+      var off = p.offset || 0;
+      return function(pos){ return x(pos + off); };
+    };
+
+    var classifications = visibleProteins.map(function(p){
+      return classifyAnnotations(p, xFor(p), parseFloat(fProtein.size) || 12, parseFloat(fNumber.size) || 11);
+    });
+    var labelLayouts = visibleProteins.map(function(p){
+      return assignLabelLanes(p, xFor(p), parseFloat(fDomain.size) || 12.5);
+    });
+
+    var totalHeight = TOP_PADDING;
+    var blockTops = [];
+    visibleProteins.forEach(function(p, idx){
+      blockTops.push(totalHeight);
+      totalHeight += proteinBlockHeight(p, classifications[idx], labelLayouts[idx]);
+    });
+    totalHeight += 20;
+
+    svgEl.setAttribute('viewBox', '0 0 ' + SVG_WIDTH + ' ' + totalHeight);
+    svgEl.setAttribute('width', SVG_WIDTH);
+    svgEl.setAttribute('height', totalHeight);
+
+    svgEl.appendChild(el('rect', {id:'bgRect', x:0, y:0, width:SVG_WIDTH, height:totalHeight, fill:'#FFFFFF'}));
+
+    // precompute per-protein layout so annotation connector lines can be drawn behind
+    // everything else, reaching the backbone (residue coordinate line) from either side
+    var layouts = visibleProteins.map(function(p, idx){
+      var top = blockTops[idx];
+      var cursor = top;
+      cursor += labelsRegionHeight(labelLayouts[idx]);
+      cursor += aboveRegionHeight(classifications[idx]);
+      var domainTop = cursor;
+      var backboneY = domainTop + DOMAIN_H/2;
+      var domainBottomY = domainTop + DOMAIN_H;
+      return {
+        domainTop: domainTop,
+        backboneY: backboneY,
+        domainBottomY: domainBottomY
+      };
+    });
+
+    // pass 1: annotation connector lines, drawn first so domain boxes sit in front of them
+    visibleProteins.forEach(function(p, idx){
+      var lay = layouts[idx];
+      var cls = classifications[idx];
+      cls.below.forEach(function(item){
+        var lineEndY = lay.domainBottomY + item.lineLength;
+        svgEl.appendChild(el('line', {x1:item.ax, y1:lineEndY, x2:item.ax, y2:lay.backboneY, stroke: INK_SOFT, 'stroke-width':1}));
+      });
+      cls.above.forEach(function(item){
+        var lineEndY = lay.domainTop - item.lineLength;
+        svgEl.appendChild(el('line', {x1:item.ax, y1:lineEndY, x2:item.ax, y2:lay.backboneY, stroke: INK_SOFT, 'stroke-width':1}));
+      });
+    });
+
+    // pass 2: everything else
+    visibleProteins.forEach(function(p, idx){
+      var top = blockTops[idx];
+      var cursor = top;
+      var cls = classifications[idx];
+      var lay = layouts[idx];
+      var labelLayout = labelLayouts[idx];
+      var px = xFor(p);
+
+      if(labelLayout.numLanes){
+        labelLayout.items.forEach(function(item){
+          var laneTop = cursor + item.lane * LABEL_LANE_H;
+          var cx = (item.x1 + item.x2) / 2;
+          svgEl.appendChild(text(cx, laneTop+14, item.label.text, {
+            'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'700', 'font-size':fDomain.size, fill: INK
+          }));
+          svgEl.appendChild(el('line', {x1:item.x1, y1:laneTop+22, x2:item.x2, y2:laneTop+22, stroke: INK, 'stroke-width':1.3}));
+        });
+        cursor += labelsRegionHeight(labelLayout);
+      }
+
+      // above-backbone annotations: each line/text pair sits as close to the domain
+      // as its own clearance requirement allows, only rising further when it would
+      // otherwise overlap the motif-tag row
+      cls.above.forEach(function(item){
+        var lineEndY = lay.domainTop - item.lineLength;
+        var closestBaselineY = lineEndY - ANNOT_TEXT_GAP;
+        var topBaseline = closestBaselineY - (item.lineCount-1) * ANNOT_LINE_H;
+        svgEl.appendChild(multilineText(item.ax, topBaseline, item.ann.text, {
+          'text-anchor':'middle', 'font-family':fProtein.family, 'font-size':'11.5', fill: INK
+        }, ANNOT_LINE_H));
+      });
+
+      var domainTop = lay.domainTop;
+      var backboneY = lay.backboneY;
+
+      svgEl.appendChild(text(MARGIN_LEFT - 10, backboneY+4, p.name, {
+        'text-anchor':'end', 'font-family':fProtein.family, 'font-weight':'700', 'font-size':fProtein.size, fill: INK
+      }));
+
+      svgEl.appendChild(el('line', {x1:px(0), y1:backboneY, x2:px(p.length), y2:backboneY, stroke: p.axis.color, 'stroke-width':p.axis.weight, 'stroke-linecap':'round'}));
+
+      // motif tags: plain text sitting directly above the domain, no connector line;
+      // tags that would overlap stack into their own lane, closest lane nearest the box
+      if(cls.hasMarkText){
+        cls.markLaneInfo.items.forEach(function(item){
+          var markTagY = domainTop - 6 - item.lane * MARK_TAG_LANE_H;
+          svgEl.appendChild(text(item.ax, markTagY, item.mark.text, {
+            'text-anchor':'middle', 'font-family':fNumber.family, 'font-size':fNumber.size, fill: INK_SOFT
+          }));
+        });
+      }
+
+      var shapeAttrs = boxShapeAttrs(p.box);
+      var borderAttrs = boxBorderAttrs(p.box);
+      p.domains.forEach(function(d){
+        var dx = px(d.start-1);
+        var dw = Math.max(2, px(d.end) - px(d.start-1));
+        var rectAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, fill:d.color};
+        Object.assign(rectAttrs, shapeAttrs, borderAttrs);
+        svgEl.appendChild(el('rect', rectAttrs));
+      });
+
+      var markInset = (p.box.borderStyle === 'none') ? 0 : (p.box.borderWidth / 2);
+      p.marks.forEach(function(m){
+        var mx = px(m.start-1);
+        var mw = Math.max(2.5, px(m.end) - px(m.start-1));
+        svgEl.appendChild(el('rect', {x:mx, y:domainTop+markInset, width:mw, height:DOMAIN_H-markInset*2, fill:m.color}));
+      });
+
+      // domain name text drawn last within this stack so it always sits above
+      // both the domain box fill and any motif mark bars inside it
+      p.domains.forEach(function(d){
+        var dx = px(d.start-1);
+        var dw = Math.max(2, px(d.end) - px(d.start-1));
+        var cx = dx + dw/2;
+        svgEl.appendChild(text(cx, domainTop+DOMAIN_H/2+4, d.text, {
+          'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'600', 'font-size':fDomain.size, fill: INK
+        }));
+      });
+
+      // end-number row: protein start/end, plus each domain's start/end residues
+      // when that option is enabled — stacked into lanes wherever labels would
+      // otherwise collide (a domain's start/end pair always shares one lane)
+      cls.endNumberLaneInfo.items.forEach(function(item){
+        var y = lay.domainBottomY + 12 + item.lane * ENDNUM_H;
+        svgEl.appendChild(text(item.ax, y, item.text, {
+          'text-anchor':'middle', 'font-family':fNumber.family, 'font-size':fNumber.size, fill: INK_SOFT
+        }));
+      });
+
+      // below-backbone annotations: each line/text pair sits as close to the domain
+      // as its own clearance requirement allows, only dropping further when it would
+      // otherwise overlap the end-number row
+      cls.below.forEach(function(item){
+        var lineEndY = lay.domainBottomY + item.lineLength;
+        var topBaseline = lineEndY + ANNOT_TEXT_GAP + ANNOT_BASELINE_OFFSET;
+        svgEl.appendChild(multilineText(item.ax, topBaseline, item.ann.text, {
+          'text-anchor':'middle', 'font-family':fProtein.family, 'font-size':'11.5', fill: INK
+        }, ANNOT_LINE_H));
+      });
+    });
+
+    scaleInfoEl.textContent = 'Scale: 1 aa ≈ ' + pxPerRes.toFixed(3) + ' px  ·  longest visible sequence: ' + maxLen + ' aa  ·  axis: ' + Math.round(TRACK_WIDTH) + ' px';
+    var hiddenCount = state.proteins.length - visibleProteins.length;
+    proteinCountEl.textContent = visibleProteins.length + (visibleProteins.length===1 ? ' protein shown' : ' proteins shown') + (hiddenCount ? ' (' + hiddenCount + ' hidden)' : '');
+  }
+
+  // ---------- render orchestration ----------
+  function render(){
+    renderSidebar();
+    renderCanvas();
+  }
+
+  // ---------- event delegation ----------
+  function handleFieldChange(e){
+    var t = e.target;
+    var section = t.dataset.section;
+    if(!section) return;
+    var p = state.proteins.find(function(pp){ return pp.id === t.dataset.protein; });
+    if(!p) return;
+
+    if(section === 'protein'){
+      if(t.dataset.field === 'name'){
+        p.name = t.value;
+        var chip = proteinListEl.querySelector('[data-chip="'+p.id+'"] .chip-name');
+        if(chip) chip.textContent = p.name;
+      } else if(t.dataset.field === 'length'){
+        p.length = Math.max(1, parseInt(t.value,10) || 1);
+        var chipLen = proteinListEl.querySelector('[data-chip="'+p.id+'"] .chip-len');
+        if(chipLen) chipLen.textContent = p.length + ' aa';
+      } else if(t.dataset.field === 'showDomainResidues'){
+        p.showDomainResidues = t.checked;
+      } else if(t.dataset.field === 'offset'){
+        p.offset = parseInt(t.value,10) || 0;
+      }
+      renderCanvas();
+      return;
+    }
+
+    if(section === 'box'){
+      var boxField = t.dataset.field;
+      if(boxField === 'radius' || boxField === 'borderWidth'){
+        p.box[boxField] = parseFloat(t.value) || 0;
+      } else {
+        p.box[boxField] = t.value;
+      }
+      renderCanvas();
+      return;
+    }
+
+    if(section === 'axis'){
+      var axisField = t.dataset.field;
+      if(axisField === 'weight'){
+        p.axis.weight = Math.max(0.5, parseFloat(t.value) || 1);
+      } else {
+        p.axis.color = t.value;
+      }
+      renderCanvas();
+      return;
+    }
+
+    var arrKey = section + 's';
+    var arr = p[arrKey];
+    if(!arr) return;
+    var item = arr.find(function(it){ return it.id === t.dataset.item; });
+    if(!item) return;
+    var field = t.dataset.field;
+    if(field === 'start' || field === 'end' || field === 'position'){
+      item[field] = parseInt(t.value,10) || 0;
+    } else {
+      item[field] = t.value;
+    }
+    renderCanvas();
+  }
+
+  document.getElementById('main').addEventListener('input', handleFieldChange);
+  document.getElementById('main').addEventListener('change', handleFieldChange);
+
+  document.getElementById('main').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    var action = btn.dataset.action;
+    var pid = btn.dataset.protein;
+    var p = state.proteins.find(function(pp){ return pp.id === pid; });
+
+    if(action === 'select-protein'){ state.activeProteinId = pid; render(); return; }
+
+    if(action === 'add-protein'){
+      var np = newProtein('New protein', 300);
+      state.proteins.push(np);
+      state.activeProteinId = np.id;
+      render(); return;
+    }
+    if(action === 'remove-protein'){
+      if(state.proteins.length === 1) return;
+      state.proteins = state.proteins.filter(function(pp){ return pp.id !== pid; });
+      if(state.activeProteinId === pid) state.activeProteinId = state.proteins[0].id;
+      render(); return;
+    }
+    if(action === 'duplicate-protein'){
+      var clone = JSON.parse(JSON.stringify(p));
+      clone.id = uid();
+      clone.name = p.name + ' copy';
+      ['labels','domains','marks','annotations'].forEach(function(k){
+        clone[k].forEach(function(it){ it.id = uid(); });
+      });
+      var origIdx = state.proteins.findIndex(function(pp){ return pp.id === pid; });
+      state.proteins.splice(origIdx+1, 0, clone);
+      state.activeProteinId = clone.id;
+      render(); return;
+    }
+    if(action === 'move-protein-up' || action === 'move-protein-down'){
+      var i = state.proteins.findIndex(function(pp){ return pp.id === pid; });
+      var j = action === 'move-protein-up' ? i-1 : i+1;
+      if(j<0 || j>=state.proteins.length) return;
+      var tmp = state.proteins[i]; state.proteins[i] = state.proteins[j]; state.proteins[j] = tmp;
+      render(); return;
+    }
+
+    if(!p) return;
+
+    if(action === 'nudge-left'){ p.offset = (p.offset||0) - 10; render(); return; }
+    if(action === 'nudge-right'){ p.offset = (p.offset||0) + 10; render(); return; }
+
+    if(action === 'add-label'){ p.labels.push(newLabel()); render(); return; }
+    if(action === 'remove-label'){ p.labels = p.labels.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }
+
+    if(action === 'add-domain'){ p.domains.push(newDomain(p.domains.length)); render(); return; }
+    if(action === 'remove-domain'){ p.domains = p.domains.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }
+
+    if(action === 'add-mark'){ p.marks.push(newMark()); render(); return; }
+    if(action === 'remove-mark'){ p.marks = p.marks.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }
+
+    if(action === 'add-annotation'){ p.annotations.push(newAnnotation()); render(); return; }
+    if(action === 'remove-annotation'){ p.annotations = p.annotations.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }
+  });
+
+  document.getElementById('btnAddProtein').addEventListener('click', function(){
+    var np = newProtein('New protein', 300);
+    state.proteins.push(np);
+    state.activeProteinId = np.id;
+    render();
+  });
+
+  document.getElementById('exampleSelect').addEventListener('change', function(e){
+    var key = e.target.value;
+    if(key) loadExampleByKey(key);
+    e.target.value = '';
+  });
+  document.getElementById('btnReset').addEventListener('click', function(){
+    state.proteins = [newProtein('Protein 1', 400)];
+    state.activeProteinId = state.proteins[0].id;
+    document.getElementById('exportFileName').value = 'domain-architect';
+    render();
+  });
+
+  // ---------- export ----------
+  function serializeSvg(includeBackground){
+    var clone = svgEl.cloneNode(true);
+    clone.setAttribute('xmlns', NS);
+    if(!includeBackground){
+      var bg = clone.querySelector('#bgRect');
+      if(bg) bg.parentNode.removeChild(bg);
+    }
+    return new XMLSerializer().serializeToString(clone);
+  }
+  function getExportBaseName(){
+    var raw = (document.getElementById('exportFileName').value || '').trim();
+    if(!raw) raw = 'domain-architect';
+    raw = raw.replace(/\.(json|csv|svg|png)$/i, '');
+    raw = raw.replace(/[\/\\:*?"<>|]/g, '-').trim();
+    return raw || 'domain-architect';
+  }
+
+  function download(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.getElementById('btnExportSvg').addEventListener('click', function(){
+    var transparent = document.getElementById('transparentBg').checked;
+    var svgStr = serializeSvg(!transparent);
+    var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+    download(blob, getExportBaseName() + '.svg');
+  });
+
+  document.getElementById('btnExportPng').addEventListener('click', function(){
+    var transparent = document.getElementById('transparentBg').checked;
+    var svgStr = serializeSvg(!transparent);
+    var w = parseFloat(svgEl.getAttribute('width'));
+    var h = parseFloat(svgEl.getAttribute('height'));
+    var scale = 2;
+    var img = new Image();
+    var svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(svgBlob);
+    img.onload = function(){
+      var canvas = document.createElement('canvas');
+      canvas.width = w*scale; canvas.height = h*scale;
+      var ctx = canvas.getContext('2d');
+      if(!transparent){
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+      }
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob){
+        download(blob, getExportBaseName() + '.png');
+        URL.revokeObjectURL(url);
+      });
+    };
+    img.onerror = function(){
+      alert('PNG export failed to render. Try Export SVG instead.');
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  // ---------- data export / import ----------
+  function exportJSON(){
+    var payload = {
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      proteins: state.proteins,
+      settings: state.settings
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    download(blob, getExportBaseName() + '.json');
+  }
+
+  function importJSONText(str){
+    var data = JSON.parse(str);
+    if(!data || !Array.isArray(data.proteins) || !data.proteins.length){
+      throw new Error('JSON has no proteins array');
+    }
+    state.proteins = data.proteins.map(withProteinDefaults);
+    state.activeProteinId = state.proteins[0].id;
+    if(data.settings && data.settings.font){
+      Object.assign(state.settings.font.protein, data.settings.font.protein || {});
+      Object.assign(state.settings.font.domain, data.settings.font.domain || {});
+      Object.assign(state.settings.font.number, data.settings.font.number || {});
+    }
+    if(data.settings && data.settings.axisLength){
+      Object.assign(state.settings.axisLength, data.settings.axisLength);
+    }
+  }
+
+  document.getElementById('btnExportJson').addEventListener('click', exportJSON);
+  document.getElementById('btnImport').addEventListener('click', function(){
+    document.getElementById('fileImport').click();
+  });
+  document.getElementById('fileImport').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        importJSONText(reader.result);
+        syncSettingsControls();
+        render();
+      } catch(err){
+        alert('Could not import file: ' + err.message);
+      }
+      e.target.value = '';
+    };
+    reader.onerror = function(){ alert('Could not read file.'); };
+    reader.readAsText(file);
+  });
+
+  // ---------- init ----------
+  render();
+})();
+</script>
+</body>
+</html>
