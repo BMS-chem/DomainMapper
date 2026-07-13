@@ -86,6 +86,34 @@
   button.icon-btn{padding:4px 8px;font-size:12px;}
   button:disabled{opacity:.35;cursor:not-allowed;}
 
+  .export-menu{position:relative;display:inline-flex;}
+  .export-popover{
+    display:none;
+    position:absolute;
+    top:calc(100% + 6px);
+    right:0;
+    z-index:50;
+    background:var(--panel);
+    border:1px solid var(--hairline);
+    border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.15);
+    padding:12px;
+    min-width:230px;
+    flex-direction:column;
+    gap:10px;
+  }
+  .export-popover.open{display:flex;}
+  .export-popover-row{display:flex;flex-direction:column;gap:8px;}
+  .export-popover-row label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);cursor:pointer;}
+  .export-popover-png-options{padding-top:8px;border-top:1px solid var(--hairline);}
+  .export-popover-field{flex-direction:row;justify-content:space-between;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+  .export-popover-field select{
+    font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:5px 6px;
+    border:1px solid var(--hairline);border-radius:5px;background:#fff;color:var(--ink);
+    text-transform:none;letter-spacing:normal;font-weight:400;
+  }
+  .export-popover-confirm{width:100%;margin-top:2px;}
+
   /* settings drawer */
   #settingsPanel{
     display:flex;
@@ -112,6 +140,20 @@
   .settings-row input[type=color]{width:30px;height:28px;padding:0;border:1px solid var(--hairline);border-radius:4px;cursor:pointer;}
   .settings-row label{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
   .settings-divider{width:1px;background:var(--hairline);align-self:stretch;margin:2px 0;}
+
+  footer#appFooter{
+    flex-shrink:0;
+    padding:5px 24px;
+    border-top:1px solid var(--hairline);
+    background:var(--panel);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  footer#appFooter a{color:var(--ink-soft);text-decoration:none;}
+  footer#appFooter a:hover{color:var(--accent);text-decoration:underline;}
 
   #main{display:flex;flex:1;min-height:0;overflow:hidden;}
   #sidebar{
@@ -301,16 +343,37 @@
         <option value="txn">TXN</option>
       </select>
       <button id="btnReset" class="ghost">Reset</button>
+      <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+      <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <input type="text" id="exportFileName" value="domain-mapper" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
       <button id="btnImport" class="ghost">Import…</button>
       <button id="btnExportJson" class="ghost">Export JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);cursor:pointer;">
-        <input type="checkbox" id="transparentBg" style="width:auto;">Transparent background
-      </label>
-      <button id="btnExportSvg">Export SVG</button>
-      <button id="btnExportPng" class="primary">Export PNG</button>
+      <div class="export-menu">
+        <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export ▾</button>
+        <div id="exportPopover" class="export-popover" role="menu">
+          <div class="export-popover-row">
+            <label><input type="radio" name="exportFormat" id="exportFormatSvg" value="svg"> SVG</label>
+            <label><input type="radio" name="exportFormat" id="exportFormatPng" value="png" checked> PNG</label>
+          </div>
+          <div id="exportPngOptions" class="export-popover-row export-popover-png-options">
+            <label class="export-popover-checkbox">
+              <input type="checkbox" id="transparentBg">Transparent background
+            </label>
+            <label class="export-popover-field">
+              Resolution
+              <select id="exportDpi">
+                <option value="96">96 dpi (screen)</option>
+                <option value="150">150 dpi (web/hi-DPI)</option>
+                <option value="300" selected>300 dpi (print)</option>
+                <option value="600">600 dpi (high-res print)</option>
+              </select>
+            </label>
+          </div>
+          <button id="btnExportConfirm" class="primary export-popover-confirm">Export</button>
+        </div>
+      </div>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <button id="btnHelp" class="ghost">? Help</button>
       <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
@@ -382,6 +445,11 @@
       </div>
     </section>
   </div>
+
+  <footer id="appFooter">
+    <span>DomainMapper v1.0 · Ben Mortishire-Smith</span>
+    <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">GitHub</a>
+  </footer>
 </div>
 
 <div id="startOverlay" class="open">
@@ -447,12 +515,20 @@
         <li><strong>File name</strong>: base name for all exports</li>
         <li><strong>Import…</strong>: load a <code>.json</code> file, replaces current diagram</li>
         <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
-        <li><strong>Transparent background</strong>: checkbox, applies to SVG/PNG export</li>
-        <li><strong>Export SVG</strong>: vector</li>
-        <li><strong>Export PNG</strong>: raster</li>
-        <li><strong>Load example…</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, NRF2, SRC, TXN)</li>
+        <li><strong>Export…</strong>: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting</li>
+        <li><strong>Load example…</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
+        <li><strong>Undo / Redo</strong>: step backward/forward through recent edits (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
         <li><strong>Reset</strong>: clear to single blank protein</li>
       </ul>
+
+      <h2>Autosave &amp; session restore</h2>
+      <ul>
+        <li>Your work is saved automatically to this browser (debounced ~400ms after each edit) — no explicit save step needed.</li>
+        <li>On reload, if a saved session exists, you'll be offered a <strong>Restore your last session</strong> option alongside the worked examples.</li>
+        <li><strong>Reset</strong> clears both the on-screen diagram and the saved session.</li>
+      </ul>
+
+      <p>Source, issues, and license: <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">github.com/bms-chem/DomainMapper</a></p>
     </div>
   </div>
 </div>
@@ -560,6 +636,7 @@
     if(skipNextSave){ skipNextSave = false; return; }
     if(saveStateTimer) clearTimeout(saveStateTimer);
     saveStateTimer = setTimeout(saveStateNow, SAVE_DEBOUNCE_MS);
+    scheduleHistoryPush();
   }
   function hasSavedState(){
     try{ return !!localStorage.getItem(STORAGE_KEY); } catch(err){ return false; }
@@ -574,6 +651,63 @@
       importJSONText(raw);
       return true;
     } catch(err){ return false; }
+  }
+
+  // ---------- undo/redo history ----------
+  var historyStack = [], historyIndex = -1, historyPushTimer = null;
+  var HISTORY_DEBOUNCE_MS = 500, HISTORY_LIMIT = 100;
+
+  function snapshotState(){
+    return JSON.stringify({proteins: state.proteins, settings: state.settings, activeProteinId: state.activeProteinId});
+  }
+  function commitHistoryEntry(){
+    if(historyPushTimer){ clearTimeout(historyPushTimer); historyPushTimer = null; }
+    var snap = snapshotState();
+    if(historyIndex >= 0 && historyStack[historyIndex] === snap) return;
+    historyStack.splice(historyIndex + 1);
+    historyStack.push(snap);
+    historyIndex = historyStack.length - 1;
+    if(historyStack.length > HISTORY_LIMIT){ historyStack.shift(); historyIndex--; }
+    updateHistoryButtons();
+  }
+  function scheduleHistoryPush(){
+    if(historyPushTimer) clearTimeout(historyPushTimer);
+    historyPushTimer = setTimeout(commitHistoryEntry, HISTORY_DEBOUNCE_MS);
+  }
+  function resetHistory(){
+    if(historyPushTimer){ clearTimeout(historyPushTimer); historyPushTimer = null; }
+    historyStack = [snapshotState()];
+    historyIndex = 0;
+    updateHistoryButtons();
+  }
+  function applyHistorySnapshot(json){
+    var data = JSON.parse(json);
+    state.proteins = data.proteins.map(withProteinDefaults);
+    state.settings = data.settings;
+    state.activeProteinId = (data.activeProteinId && state.proteins.some(function(p){ return p.id === data.activeProteinId; }))
+      ? data.activeProteinId : state.proteins[0].id;
+    syncSettingsControls();
+    renderSidebar();
+    renderCanvas();
+    saveStateNow();
+    updateHistoryButtons();
+  }
+  function doUndo(){
+    if(historyPushTimer) commitHistoryEntry();
+    if(historyIndex <= 0) return;
+    historyIndex--;
+    applyHistorySnapshot(historyStack[historyIndex]);
+  }
+  function doRedo(){
+    if(historyPushTimer) commitHistoryEntry();
+    if(historyIndex >= historyStack.length - 1) return;
+    historyIndex++;
+    applyHistorySnapshot(historyStack[historyIndex]);
+  }
+  function updateHistoryButtons(){
+    var u = document.getElementById('btnUndo'), r = document.getElementById('btnRedo');
+    if(u) u.disabled = historyIndex <= 0;
+    if(r) r.disabled = historyIndex >= historyStack.length - 1;
   }
 
   function activeProtein(){
@@ -947,6 +1081,54 @@
     scheduleSaveState();
   });
 
+  document.getElementById('btnUndo').addEventListener('click', doUndo);
+  document.getElementById('btnRedo').addEventListener('click', doRedo);
+  document.addEventListener('keydown', function(e){
+    if(!(e.ctrlKey || e.metaKey)) return;
+    var k = e.key.toLowerCase();
+    if(k === 'z' && !e.shiftKey){ e.preventDefault(); doUndo(); }
+    else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); doRedo(); }
+  });
+
+  // ---------- export popover ----------
+  var btnExport = document.getElementById('btnExport');
+  var exportPopover = document.getElementById('exportPopover');
+  var exportPngOptions = document.getElementById('exportPngOptions');
+
+  function openExportPopover(){
+    exportPopover.classList.add('open');
+    btnExport.classList.add('active-toggle');
+    btnExport.setAttribute('aria-expanded', 'true');
+    syncExportFormatUI();
+  }
+  function closeExportPopover(){
+    exportPopover.classList.remove('open');
+    btnExport.classList.remove('active-toggle');
+    btnExport.setAttribute('aria-expanded', 'false');
+  }
+  function syncExportFormatUI(){
+    var isPng = document.getElementById('exportFormatPng').checked;
+    exportPngOptions.style.display = isPng ? 'flex' : 'none';
+  }
+
+  btnExport.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(exportPopover.classList.contains('open')) closeExportPopover();
+    else openExportPopover();
+  });
+  exportPopover.addEventListener('click', function(e){ e.stopPropagation(); });
+  document.addEventListener('click', function(e){
+    if(exportPopover.classList.contains('open') &&
+       !btnExport.contains(e.target) && !exportPopover.contains(e.target)){
+      closeExportPopover();
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && exportPopover.classList.contains('open')) closeExportPopover();
+  });
+  document.getElementById('exportFormatSvg').addEventListener('change', syncExportFormatUI);
+  document.getElementById('exportFormatPng').addEventListener('change', syncExportFormatUI);
+
   var helpOverlay = document.getElementById('helpOverlay');
   function openHelp(){ helpOverlay.classList.add('open'); }
   function closeHelp(){ helpOverlay.classList.remove('open'); }
@@ -969,6 +1151,7 @@
     btnRestoreSession.addEventListener('click', function(){
       if(restoreSavedState()) syncSettingsControls();
       render();
+      resetHistory();
       closeStart();
     });
     startButtonsEl.appendChild(btnRestoreSession);
@@ -980,11 +1163,15 @@
     btn.textContent = opt.textContent;
     btn.addEventListener('click', function(){
       loadExampleByKey(opt.value);
+      resetHistory();
       closeStart();
     });
     startButtonsEl.appendChild(btn);
   });
-  document.getElementById('btnStartBlank').addEventListener('click', closeStart);
+  document.getElementById('btnStartBlank').addEventListener('click', function(){
+    resetHistory();
+    closeStart();
+  });
   startOverlay.addEventListener('click', function(e){
     if(e.target === startOverlay) closeStart();
   });
@@ -1769,7 +1956,7 @@
 
   document.getElementById('exampleSelect').addEventListener('change', function(e){
     var key = e.target.value;
-    if(key) loadExampleByKey(key);
+    if(key){ loadExampleByKey(key); resetHistory(); }
     e.target.value = '';
   });
   document.getElementById('btnReset').addEventListener('click', function(){
@@ -1806,19 +1993,16 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
 
-  document.getElementById('btnExportSvg').addEventListener('click', function(){
-    var transparent = document.getElementById('transparentBg').checked;
+  function exportSvg(transparent){
     var svgStr = serializeSvg(!transparent);
     var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     download(blob, getExportBaseName() + '.svg');
-  });
+  }
 
-  document.getElementById('btnExportPng').addEventListener('click', function(){
-    var transparent = document.getElementById('transparentBg').checked;
+  function exportPng(transparent, scale){
     var svgStr = serializeSvg(!transparent);
     var w = parseFloat(svgEl.getAttribute('width'));
     var h = parseFloat(svgEl.getAttribute('height'));
-    var scale = 2;
     var img = new Image();
     var svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     var url = URL.createObjectURL(svgBlob);
@@ -1842,6 +2026,18 @@
       URL.revokeObjectURL(url);
     };
     img.src = url;
+  }
+
+  document.getElementById('btnExportConfirm').addEventListener('click', function(){
+    var isPng = document.getElementById('exportFormatPng').checked;
+    var transparent = document.getElementById('transparentBg').checked;
+    if(isPng){
+      var dpi = parseFloat(document.getElementById('exportDpi').value) || 96;
+      exportPng(transparent, dpi / 96);
+    } else {
+      exportSvg(transparent);
+    }
+    closeExportPopover();
   });
 
   // ---------- data export / import ----------
@@ -1886,6 +2082,7 @@
         importJSONText(reader.result);
         syncSettingsControls();
         render();
+        resetHistory();
       } catch(err){
         alert('Could not import file: ' + err.message);
       }
@@ -1897,6 +2094,7 @@
 
   // ---------- init ----------
   render();
+  resetHistory();
 })();
 </script>
 </body>

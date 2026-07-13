@@ -2,6 +2,8 @@
 
 A simple, interactive tool to generate to-scale schematics of protein layouts.
 
+Repository: https://github.com/bms-chem/DomainMapper
+
 ## Layout
 
 - Header: global settings, import/export
@@ -40,18 +42,18 @@ Overlapping group labels, motif tags, and annotations stack vertically to try an
 - **File name**: base name for all exports
 - **Import…**: load a `.json` file, replaces current diagram
 - **Export JSON**: full data + all settings that can be re-imported later
-- **Transparent background**: checkbox, applies to SVG/PNG export
-- **Export SVG**: vector
-- **Export PNG**: raster
-- **Load example…**: display a worked example (Class VI TRIM family, EGFR, HIF-1α, NRF2, SRC, TXN)
+- **Export…**: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting
+- **Load example…**: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)
+- **Undo / Redo**: step backward/forward through recent edits (`Ctrl+Z` / `Ctrl+Y`, or `Ctrl+Shift+Z`)
 - **Reset**: clear to single blank protein
+
+## Autosave / session restore
+
+- Your work is saved automatically to this browser (debounced ~400ms after each edit) — no explicit save step needed.
+- On reload, if a saved session exists, you'll be offered a **Restore your last session** option alongside the worked examples.
+- **Reset** clears both the on-screen diagram and the saved session.
 
 
 To do:
-- add name and version to footer(?) w/ my name too
-- check that SVG export includes editable text, font selection, etc
-- check resolution of PNG export (300 dpi/600 dpi options?)
-- add undo/redo button?
 - ability to visually resize domains by dragging?
-- mention github repo in help panel
 - import from uniprot accession?
