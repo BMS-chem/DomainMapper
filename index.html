@@ -1334,56 +1334,59 @@
     return Math.abs(ax - bx) < (aHalf + bHalf);
   }
 
-  // Lane assignment for the end-number row: the protein's own '1'/length labels are
-  // independent items, but a domain's start+end residue labels (when shown) are kept
-  // together as a pair — if either one would collide with a neighbour, the whole pair
-  // moves down to the next lane together, rather than splitting apart.
-  function assignEndNumberLanes(p, xFn, numberFontSize){
-    function mkItem(ax, text){
-      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontSize)};
+  // Visibility resolution for the end-number row: the protein's own '1'/length labels
+  // always win. Among domain start/end residue labels (when shown), later position wins
+  // over earlier — i.e. a domain's "end" label is dropped in favor of the next domain's
+  // "start" label when they'd collide, since the residues are adjacent in sequence anyway.
+  // The row is therefore always a single line; collisions are resolved by omission, not
+  // by stacking into extra lanes.
+  function computeVisibleEndNumbers(p, xFn, numberFontSize){
+    function mkItem(ax, text, isProtein){
+      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontSize), isProtein:isProtein};
     }
-    var groups = [
-      [mkItem(xFn(0), '1')],
-      [mkItem(xFn(p.length), String(p.length))]
+    var items = [
+      mkItem(xFn(0), '1', true),
+      mkItem(xFn(p.length), String(p.length), true)
     ];
     if(p.showDomainResidues){
       p.domains.forEach(function(d){
-        groups.push([mkItem(xFn(d.start-1), String(d.start)), mkItem(xFn(d.end), String(d.end))]);
+        items.push(mkItem(xFn(d.start-1), String(d.start), false));
+        items.push(mkItem(xFn(d.end), String(d.end), false));
       });
     }
-    groups.forEach(function(g){
-      g.minX = Math.min.apply(null, g.map(function(i){ return i.ax - i.halfWidth; }));
-      g.maxX = Math.max.apply(null, g.map(function(i){ return i.ax + i.halfWidth; }));
-    });
-    groups.sort(function(a,b){ return a.minX - b.minX; });
-    var laneEnds = [];
-    groups.forEach(function(g){
-      var placed = false;
-      for(var i=0; i<laneEnds.length; i++){
-        if(g.minX > laneEnds[i] + 8){
-          laneEnds[i] = g.maxX;
-          g.forEach(function(item){ item.lane = i; });
-          placed = true;
-          break;
-        }
+    items.sort(function(a,b){ return a.ax - b.ax; });
+
+    var visible = [];
+    items.forEach(function(item){
+      var last = visible.length ? visible[visible.length-1] : null;
+      if(!last || !overlaps(item.ax, item.halfWidth, last.ax, last.halfWidth)){
+        visible.push(item);
+      } else if(item.isProtein && last.isProtein){
+        // both protein-terminus labels (very short protein): keep both regardless
+        visible.push(item);
+      } else if(item.isProtein){
+        // protein wins over a domain label: replace the retracted domain item
+        visible.pop();
+        visible.push(item);
+      } else if(last.isProtein){
+        // protein wins: drop this domain label entirely
+      } else {
+        // two domain labels: later position wins, drop the earlier one
+        visible.pop();
+        visible.push(item);
       }
-      if(!placed){
-        var lane = laneEnds.length;
-        laneEnds.push(g.maxX);
-        g.forEach(function(item){ item.lane = lane; });
-      }
     });
-    var items = [].concat.apply([], groups);
-    return {items: items, numLanes: laneEnds.length};
+
+    return {items: visible, numLanes: 1};
   }
 
-  // Structural row(s) below the domain: always the end-number row, which also carries
-  // per-domain start/end residue obstacles when that option is enabled, stacked into
-  // lanes when they'd otherwise collide.
+  // Structural row(s) below the domain: the end-number row, which also carries
+  // per-domain start/end residue obstacles when that option is enabled. Colliding
+  // labels are hidden rather than stacked, so this is always exactly one row tall.
   function belowRows(p, xFn, numberFontSize){
-    var endNumberLaneInfo = assignEndNumberLanes(p, xFn, numberFontSize);
+    var endNumberLaneInfo = computeVisibleEndNumbers(p, xFn, numberFontSize);
     var obstacles = endNumberLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
-    var rows = [{name:'endnum', height:endNumberLaneInfo.numLanes * ENDNUM_H, obstacles:obstacles}];
+    var rows = [{name:'endnum', height:ENDNUM_H, obstacles:obstacles}];
     return {rows:rows, endNumberLaneInfo:endNumberLaneInfo};
   }
 
@@ -1783,11 +1786,11 @@
         }));
       });
 
-      // end-number row: protein start/end, plus each domain's start/end residues
-      // when that option is enabled — stacked into lanes wherever labels would
-      // otherwise collide (a domain's start/end pair always shares one lane)
+      // end-number row: protein start/end, plus each visible domain start/end residue
+      // label when that option is enabled. Colliding labels are pre-resolved (hidden)
+      // by computeVisibleEndNumbers, so this always draws on a single line.
       cls.endNumberLaneInfo.items.forEach(function(item){
-        var y = lay.domainBottomY + 12 + item.lane * ENDNUM_H;
+        var y = lay.domainBottomY + 12;
         svgEl.appendChild(text(item.ax, y, item.text, {
           'text-anchor':'middle', 'font-family':fNumber.family, 'font-size':fNumber.size, fill: INK_SOFT
         }));
