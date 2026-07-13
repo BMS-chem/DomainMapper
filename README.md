@@ -52,3 +52,5 @@ To do:
 - suggested features/functionality
 - suggested consolidatoin/reorganisation of the UI to retain functionality but make tidier/cleaner
 - add custom umami tracking events for different exports, imports, worked examples
+- change footer to: Privacy • GitHub • License
+- Privacy gives statement along the lines of: DM uses Umami Analytics to collect anonymous usage statistics such as page visits and activity. Umami and DomainMapper do not record any actual input entered by a user. Umami does not use cookies for analytics and does not collect personally identifiable information or track users across websites.
