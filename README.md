@@ -45,10 +45,10 @@ Overlapping group labels, motif tags, and annotations stack vertically to try an
 To do:
 - ability to visually resize domains by dragging?
 - import from uniprot accession?
-- google analytics for tracking
 - feedback/feature request/bug reporting?
 - rename Group label functionality as Region label
 - colour palettes (change the default at the very least)
 - rename imports to "Import JSON" and "Import UniProt"
 - suggested features/functionality
 - suggested consolidatoin/reorganisation of the UI to retain functionality but make tidier/cleaner
+- add custom umami tracking events for different exports, imports, worked examples
