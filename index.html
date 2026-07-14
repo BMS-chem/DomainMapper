@@ -150,6 +150,7 @@
     gap:26px;
     flex-wrap:wrap;
   }
+  #settingsPanel.collapsed{display:none;}
   .settings-group{display:flex;flex-direction:column;gap:6px;min-width:170px;}
   .settings-group-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);font-weight:700;}
   .settings-row{display:flex;gap:6px;align-items:center;}
@@ -374,6 +375,9 @@
       <span class="subtitle">easy protein domain schematics</span>
     </div>
     <div class="toolbar">
+      <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+      <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
         <option value="" selected>Load example</option>
         <option value="classvitrim">Class VI TRIMs</option>
@@ -384,11 +388,7 @@
         <option value="src">SRC</option>
         <option value="txn">TXN</option>
       </select>
-      <button id="btnReset" class="ghost">Reset</button>
-      <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
-      <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
-      <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
+      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:160px;background:#fff;color:var(--ink);">
       <button id="btnUniprotImport" class="ghost">Import UniProt</button>
       <button id="btnImport" class="ghost">Import JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
@@ -419,12 +419,15 @@
         </div>
       </div>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <button id="btnToggleSettings" class="ghost" aria-expanded="false" aria-controls="settingsPanel">Formatting ▾</button>
+      <button id="btnReset" class="ghost">Reset</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <button id="btnHelp" class="ghost">? Help</button>
       <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
     </div>
   </header>
 
-  <div id="settingsPanel">
+  <div id="settingsPanel" class="collapsed">
     <div class="settings-group">
       <div class="settings-group-title">Protein name text</div>
       <div class="settings-row">
@@ -501,10 +504,10 @@
   </footer>
 </div>
 
-<div id="startOverlay" class="open">
+<div id="startOverlay" class="open" role="dialog" aria-modal="true" aria-labelledby="startOverlayTitle">
   <div class="help-panel" style="max-width:540px;">
     <div class="help-panel-header">
-      <h2>DomainMapper</h2>
+      <h2 id="startOverlayTitle">DomainMapper</h2>
     </div>
     <div class="help-panel-body">
       <p>Choose how you'd like to start.</p>
@@ -529,25 +532,25 @@
   </div>
 </div>
 
-<div id="helpOverlay">
+<div id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpOverlayTitle">
   <div class="help-panel">
     <div class="help-panel-header">
-      <h2>DomainMapper — Overview</h2>
-      <button id="btnHelpClose" class="icon-btn ghost" title="Close">✕</button>
+      <h2 id="helpOverlayTitle">DomainMapper — Overview</h2>
+      <button id="btnHelpClose" class="icon-btn ghost" title="Close" aria-label="Close">✕</button>
     </div>
     <div class="help-panel-body">
       <p>Browser tool for building maps of protein architecture.</p>
 
       <h2>Toolbar</h2>
       <ul>
-        <li><strong>Load example</strong>: display a worked example (Class VI TRIMs, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
-        <li><strong>Reset</strong>: clear canvas</li> 
         <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
-        <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and selectively add them as a new protein</li>
+        <li><strong>Load example</strong>: display a worked example</li>
+        <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and customisably add them as a new protein</li>
         <li><strong>Import JSON</strong>: load a previous <code>.json</code> file, replaces current diagram</li>
         <li><strong>File name</strong>: base name for all exports</li>
         <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
         <li><strong>Export image</strong>: choose SVG or PNG</li>
+        <li><strong>Reset</strong>: clear canvas</li>
       </ul>
       
       <h2>General formatting</h2>
@@ -568,11 +571,11 @@
 
       <h2>Protein formatting</h2>
       <ul>
-        <li><strong>Details</strong>: Name, Length (aa), Offset, and coordinate axis formatting (colour, weight)</li>
-        <li><strong>Domains</strong>: toggle showing start/end residues on each domain, format domain box appearance (shape, corner radius, border style/width/colour), and annotate protein domains</li>
-        <li><strong>Regions</strong>: label regions of domains, or areas of the protein (e.g. "disordered region")</li>
-        <li><strong>Motifs</strong>: annotate regions of interest (e.g. a binding site within a domain)</li>
-        <li><strong>Annotations</strong>: annotate sites of interest (e.g. a residue, mutation, or interaction partner)</li>
+        <li><strong>Details</strong>: Name, length, horizontal offset, and coordinate axis formatting</li>
+        <li><strong>Domains</strong>: enter domains, toggle start/end residue visibility, format domain box appearance, and annotate protein domains</li>
+        <li><strong>Regions</strong>: label regions, groups of domains, or areas of the protein (e.g. disordered region)</li>
+        <li><strong>Motifs</strong>: label motifs of interest (e.g. a binding site within a domain)</li>
+        <li><strong>Annotations</strong>: label sites of interest (e.g. a residue, mutation, or interaction partner)</li>
       </ul>
       <p>Overlapping region labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
 
@@ -583,11 +586,11 @@
   </div>
 </div>
 
-<div id="privacyOverlay">
+<div id="privacyOverlay" role="dialog" aria-modal="true" aria-labelledby="privacyOverlayTitle">
   <div class="help-panel">
     <div class="help-panel-header">
-      <h2>Privacy</h2>
-      <button id="btnPrivacyClose" class="icon-btn ghost" title="Close">✕</button>
+      <h2 id="privacyOverlayTitle">Privacy</h2>
+      <button id="btnPrivacyClose" class="icon-btn ghost" title="Close" aria-label="Close">✕</button>
     </div>
     <div class="help-panel-body">
       <p>DomainMapper uses Umami Analytics to collect anonymous usage statistics such as page visits and feature usage. Umami does not use cookies, does not collect personally identifiable information, and does not track you across other websites. No protein, domain, or other diagram data you enter into DomainMapper is ever recorded or sent to Umami.</p>
@@ -595,11 +598,11 @@
   </div>
 </div>
 
-<div id="uniprotOverlay">
+<div id="uniprotOverlay" role="dialog" aria-modal="true" aria-labelledby="uniprotOverlayTitle">
   <div class="help-panel" style="max-width:640px;">
     <div class="help-panel-header">
-      <h2>Import from UniProt</h2>
-      <button id="btnUniprotClose" class="icon-btn ghost" title="Close">✕</button>
+      <h2 id="uniprotOverlayTitle">Import from UniProt</h2>
+      <button id="btnUniprotClose" class="icon-btn ghost" title="Close" aria-label="Close">✕</button>
     </div>
     <div class="help-panel-body">
       <p>If you would like additional types of UniProt annotations to be imported, please <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=feature_request.yml" target="_blank" rel="noopener">submit a suggestion</a>.</p>
@@ -625,7 +628,7 @@
   "use strict";
 
   // ---------- constants ----------
-  var PALETTE = ['#E8B4B8','#D9A066','#8FB8B0','#6B8CAE','#7A9B76','#A67C6D','#C9A66B','#9B8AA6'];
+  var PALETTE = ['#E8B4B8','#D9A066','#8FB8B0','#6B8CAE','#7A9B76','#A67C6D','#C9A66B','#9B8AA6','#B08968','#7C9EB2','#C97C5D','#8A8FA6'];
   var INK = '#20211D';
   var INK_SOFT = '#5C5A50';
   var HAIRLINE = '#C9C3B2';
@@ -1259,6 +1262,47 @@
     scheduleSaveState();
   });
 
+  function round2(v){ return Math.round(v * 100) / 100; }
+
+  // Clamps a settings number field to [min,max] on blur/commit (not on every keystroke,
+  // so typing a multi-digit value isn't fought mid-type) and writes the corrected value
+  // back into the field with a brief tooltip explaining why it changed.
+  function clampSettingField(inputEl, min, max, fallback, decimals){
+    var parsed = parseFloat(inputEl.value);
+    var invalid = !isFinite(parsed) || parsed <= 0;
+    var raw = invalid ? fallback : parsed;
+    var clamped = Math.min(max, Math.max(min, raw));
+    var f = Math.pow(10, decimals);
+    clamped = Math.round(clamped * f) / f;
+    if(invalid || clamped !== raw){
+      inputEl.value = clamped;
+      showFieldTooltip(inputEl, 'Clamped to ' + min + '–' + max);
+    }
+    return clamped;
+  }
+
+  document.getElementById('settingsPanel').addEventListener('change', function(){
+    var s = state.settings;
+    s.font.protein.size = clampSettingField(numProteinSize, 8, 32, 13, 1);
+    s.font.domain.size = clampSettingField(numDomainSize, 8, 32, 12.5, 1);
+    s.font.number.size = clampSettingField(numNumberSize, 7, 28, 11, 1);
+    var axisUnit = selAxisLengthUnit.value;
+    var axisMin = axisUnit === 'cm' ? round2(100 / PX_PER_CM) : 100;
+    var axisMax = axisUnit === 'cm' ? round2(20000 / PX_PER_CM) : 20000;
+    var axisFallback = axisUnit === 'cm' ? round2(1000 / PX_PER_CM) : 1000;
+    s.axisLength.value = clampSettingField(numAxisLengthValue, axisMin, axisMax, axisFallback, axisUnit === 'cm' ? 2 : 0);
+    renderCanvas();
+    scheduleSaveState();
+  });
+
+  var settingsPanelEl = document.getElementById('settingsPanel');
+  var btnToggleSettings = document.getElementById('btnToggleSettings');
+  btnToggleSettings.addEventListener('click', function(){
+    var willOpen = settingsPanelEl.classList.contains('collapsed');
+    settingsPanelEl.classList.toggle('collapsed');
+    btnToggleSettings.setAttribute('aria-expanded', String(willOpen));
+  });
+
   document.getElementById('btnUndo').addEventListener('click', doUndo);
   document.getElementById('btnRedo').addEventListener('click', doRedo);
   document.addEventListener('keydown', function(e){
@@ -1307,32 +1351,61 @@
   document.getElementById('exportFormatSvg').addEventListener('change', syncExportFormatUI);
   document.getElementById('exportFormatPng').addEventListener('change', syncExportFormatUI);
 
+  // ---------- overlay/dialog accessibility helpers ----------
+  // Shared by all four modal overlays: moves focus into the panel on open, restores
+  // focus to whatever triggered it on close, and traps Tab/Shift+Tab inside the panel
+  // while it's open so keyboard focus can't leak into the dimmed background behind it.
+  var overlayReturnFocus = {};
+  function overlayFocusables(overlayEl){
+    return overlayEl.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  }
+  function openOverlay(overlayEl, key){
+    overlayReturnFocus[key] = document.activeElement;
+    overlayEl.classList.add('open');
+    var focusables = overlayFocusables(overlayEl);
+    if(focusables.length) focusables[0].focus();
+  }
+  function closeOverlay(overlayEl, key){
+    overlayEl.classList.remove('open');
+    var toFocus = overlayReturnFocus[key];
+    overlayReturnFocus[key] = null;
+    if(toFocus && typeof toFocus.focus === 'function') toFocus.focus();
+  }
+  function overlayKeydownHandler(overlayEl, closeFn){
+    return function(e){
+      if(!overlayEl.classList.contains('open')) return;
+      if(e.key === 'Escape'){ closeFn(); return; }
+      if(e.key !== 'Tab') return;
+      var focusables = overlayFocusables(overlayEl);
+      if(!focusables.length) return;
+      var first = focusables[0], last = focusables[focusables.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    };
+  }
+
   var helpOverlay = document.getElementById('helpOverlay');
-  function openHelp(){ helpOverlay.classList.add('open'); }
-  function closeHelp(){ helpOverlay.classList.remove('open'); }
+  function openHelp(){ openOverlay(helpOverlay, 'help'); }
+  function closeHelp(){ closeOverlay(helpOverlay, 'help'); }
   document.getElementById('btnHelp').addEventListener('click', openHelp);
   document.getElementById('btnHelpClose').addEventListener('click', closeHelp);
   helpOverlay.addEventListener('click', function(e){
     if(e.target === helpOverlay) closeHelp();
   });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && helpOverlay.classList.contains('open')) closeHelp();
-  });
+  document.addEventListener('keydown', overlayKeydownHandler(helpOverlay, closeHelp));
 
   var privacyOverlay = document.getElementById('privacyOverlay');
-  function openPrivacy(){ privacyOverlay.classList.add('open'); }
-  function closePrivacy(){ privacyOverlay.classList.remove('open'); }
+  function openPrivacy(){ openOverlay(privacyOverlay, 'privacy'); }
+  function closePrivacy(){ closeOverlay(privacyOverlay, 'privacy'); }
   document.getElementById('btnPrivacy').addEventListener('click', function(e){ e.preventDefault(); openPrivacy(); });
   document.getElementById('btnPrivacyClose').addEventListener('click', closePrivacy);
   privacyOverlay.addEventListener('click', function(e){
     if(e.target === privacyOverlay) closePrivacy();
   });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && privacyOverlay.classList.contains('open')) closePrivacy();
-  });
+  document.addEventListener('keydown', overlayKeydownHandler(privacyOverlay, closePrivacy));
 
   var startOverlay = document.getElementById('startOverlay');
-  function closeStart(){ startOverlay.classList.remove('open'); }
+  function closeStart(){ closeOverlay(startOverlay, 'start'); }
   var startExampleSelect = document.getElementById('startExampleSelect');
   Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
     if(!opt.value) return;
@@ -1379,9 +1452,7 @@
   startOverlay.addEventListener('click', function(e){
     if(e.target === startOverlay) closeStart();
   });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && startOverlay.classList.contains('open')) closeStart();
-  });
+  document.addEventListener('keydown', overlayKeydownHandler(startOverlay, closeStart));
 
   // ---------- rendering: sidebar ----------
   function renderSidebar(){
@@ -1395,10 +1466,10 @@
         '<span class="chip-name">'+escapeHtml(p.name)+'</span>' +
         '<span class="chip-len">'+p.length+' aa</span>' +
         '<span class="chip-actions">' +
-          '<button class="icon-btn ghost" data-action="move-protein-up" data-protein="'+p.id+'" '+(idx===0?'disabled':'')+' title="Move up">↑</button>' +
-          '<button class="icon-btn ghost" data-action="move-protein-down" data-protein="'+p.id+'" '+(idx===state.proteins.length-1?'disabled':'')+' title="Move down">↓</button>' +
-          '<button class="icon-btn ghost" data-action="duplicate-protein" data-protein="'+p.id+'" title="Duplicate">⧉</button>' +
-          '<button class="icon-btn danger-text" data-action="remove-protein" data-protein="'+p.id+'" title="Remove" '+(state.proteins.length===1?'disabled':'')+'>✕</button>' +
+          '<button class="icon-btn ghost" data-action="move-protein-up" data-protein="'+p.id+'" '+(idx===0?'disabled':'')+' title="Move up" aria-label="Move protein up">↑</button>' +
+          '<button class="icon-btn ghost" data-action="move-protein-down" data-protein="'+p.id+'" '+(idx===state.proteins.length-1?'disabled':'')+' title="Move down" aria-label="Move protein down">↓</button>' +
+          '<button class="icon-btn ghost" data-action="duplicate-protein" data-protein="'+p.id+'" title="Duplicate" aria-label="Duplicate protein">⧉</button>' +
+          '<button class="icon-btn danger-text" data-action="remove-protein" data-protein="'+p.id+'" title="Remove" aria-label="Remove protein" '+(state.proteins.length===1?'disabled':'')+'>✕</button>' +
         '</span>';
       chip.addEventListener('click', function(e){
         if(e.target.closest('button')) return;
@@ -1424,8 +1495,8 @@
     html += '<div class="field-row"><label>Name</label><input type="text" data-section="protein" data-field="name" data-protein="'+p.id+'" value="'+escapeAttr(p.name)+'"></div>';
     html += '<div class="field-row"><label>Length</label><input type="number" min="1" data-section="protein" data-field="length" data-protein="'+p.id+'" value="'+p.length+'"></div>';
     html += '<div class="field-row"><label>Offset</label><input type="number" step="1" style="max-width:90px;" data-section="protein" data-field="offset" data-protein="'+p.id+'" value="'+(p.offset||0)+'">' +
-      '<button class="icon-btn ghost" data-action="nudge-left" data-protein="'+p.id+'" title="Nudge left 10 residues">←</button>' +
-      '<button class="icon-btn ghost" data-action="nudge-right" data-protein="'+p.id+'" title="Nudge right 10 residues">→</button></div>';
+      '<button class="icon-btn ghost" data-action="nudge-left" data-protein="'+p.id+'" title="Nudge left 10 residues" aria-label="Nudge offset left 10 residues">←</button>' +
+      '<button class="icon-btn ghost" data-action="nudge-right" data-protein="'+p.id+'" title="Nudge right 10 residues" aria-label="Nudge offset right 10 residues">→</button></div>';
     html += '<div class="field-row"><label>Axis</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="axis" data-field="color" data-protein="'+p.id+'" value="'+p.axis.color+'">' +
       '<label style="width:auto;margin-left:8px;">Weight</label><input type="number" min="1" max="12" step="0.5" style="max-width:64px;" data-section="axis" data-field="weight" data-protein="'+p.id+'" value="'+p.axis.weight+'"></div>';
 
@@ -1446,11 +1517,11 @@
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
-    ], 'Boxes drawn to scale along the backbone.', 'domain', true);
+    ], 'Domains drawn to scale along the backbone.', 'domain', true);
 
     html += sectionTable('Regions', p.id, 'label', p.labels, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
-    ], 'Spans of text above the domain row, e.g. a shared functional annotation.');
+    ], 'Spans above the domains, indicating e.g. a shared functional annotation.');
 
     html += sectionTable('Motifs', p.id, 'mark', p.marks, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Tag (optional)'}, {field:'color', type:'color'}
@@ -1458,7 +1529,7 @@
 
     html += sectionTable('Annotations', p.id, 'annotation', p.annotations, [
       {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text (newline = new line)'}
-    ], 'Lines with labels below the backbone, e.g. binding partners.');
+    ], 'Lines with labels below the backbone, e.g. binding sites, mutations.');
 
     editorPanelEl.innerHTML = html;
   }
@@ -1492,11 +1563,11 @@
         h += '<td class="row-actions">';
         if(reorderable){
           h += '<span class="row-move-stack">' +
-            '<button class="icon-btn ghost" data-action="move-'+section+'-up" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===0?'disabled':'')+' title="Move up">▲</button>' +
-            '<button class="icon-btn ghost" data-action="move-'+section+'-down" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===items.length-1?'disabled':'')+' title="Move down">▼</button>' +
+            '<button class="icon-btn ghost" data-action="move-'+section+'-up" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===0?'disabled':'')+' title="Move up" aria-label="Move '+section+' up">▲</button>' +
+            '<button class="icon-btn ghost" data-action="move-'+section+'-down" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===items.length-1?'disabled':'')+' title="Move down" aria-label="Move '+section+' down">▼</button>' +
           '</span>';
         }
-        h += '<button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove">✕</button>';
+        h += '<button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove" aria-label="Remove '+section+'">✕</button>';
         h += '</td>';
         h += '</tr>';
       });
@@ -2362,8 +2433,8 @@
     uniprotErrorEl.style.display = which === 'error' ? 'block' : 'none';
     uniprotResults.style.display = which === 'results' ? 'block' : 'none';
   }
-  function openUniprotOverlay(){ uniprotOverlay.classList.add('open'); }
-  function closeUniprotOverlay(){ uniprotOverlay.classList.remove('open'); }
+  function openUniprotOverlay(){ openOverlay(uniprotOverlay, 'uniprot'); }
+  function closeUniprotOverlay(){ closeOverlay(uniprotOverlay, 'uniprot'); }
 
   function uniprotSectionHTML(sectionKey, title, items, isPosition){
     if(!items.length) return '';
@@ -2430,9 +2501,7 @@
   uniprotOverlay.addEventListener('click', function(e){
     if(e.target === uniprotOverlay) closeUniprotOverlay();
   });
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape' && uniprotOverlay.classList.contains('open')) closeUniprotOverlay();
-  });
+  document.addEventListener('keydown', overlayKeydownHandler(uniprotOverlay, closeUniprotOverlay));
 
   document.getElementById('btnUniprotConfirm').addEventListener('click', function(){
     if(!uniprotParsed) return;
@@ -2473,6 +2542,13 @@
   // ---------- init ----------
   render();
   resetHistory();
+  // startOverlay opens via its HTML class="open" rather than openOverlay(), so it never
+  // goes through the focus-move step that the other three overlays get on open — do that
+  // here instead, once, at the very end of setup.
+  if(startOverlay.classList.contains('open')){
+    var startFocusables = overlayFocusables(startOverlay);
+    if(startFocusables.length) startFocusables[0].focus();
+  }
 })();
 </script>
 </body>
