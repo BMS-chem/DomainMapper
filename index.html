@@ -392,7 +392,7 @@
         <option value="src">SRC</option>
         <option value="txn">TXN</option>
       </select>
-      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:160px;background:#fff;color:var(--ink);">
+      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
       <button id="btnUniprotImport" class="ghost">Import UniProt</button>
       <button id="btnImport" class="ghost">Import JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
@@ -609,6 +609,7 @@
       <button id="btnUniprotClose" class="icon-btn ghost" title="Close" aria-label="Close">✕</button>
     </div>
     <div class="help-panel-body">
+      <p>Please note - UniProt import is intended to save time setting up protein annotations, but manual editing (especially the text of domain names, regions, etc) will probably be needed to produce a clean and tidy schematic.</p>
       <p>If you would like additional types of UniProt annotations to be imported, please <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=feature_request.yml" target="_blank" rel="noopener">submit a suggestion</a>.</p>
       <div id="uniprotLocalNotice" style="display:none;">
         <p>Sorry - this feature isn't available when the tool is run locally. Please visit the live version hosted at <a href="https://bms-chem.github.io/DomainMapper/" target="_blank" rel="noopener">https://bms-chem.github.io/DomainMapper/</a> to use UniProt import.</p>
