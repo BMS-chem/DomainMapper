@@ -699,6 +699,7 @@
   var UNIPROT_DOMAIN_TYPES = ['Domain','Repeat','Zinc finger','DNA binding','Coiled coil'];
   var UNIPROT_REGION_TYPES = ['Region','Compositional bias'];
   var UNIPROT_SITE_TYPES = ['Active site','Binding site','Site'];
+  var UNIPROT_PTM_LABEL_TYPES = ['Modified residue','Lipidation','Glycosylation','Cross-link'];
 
   function uniprotFuzzyValue(loc){ return {value: loc.value, fuzzy: !!loc.fuzzy}; }
   function uniprotApplyFuzzyPrefix(text, fuzzy){ return fuzzy ? ('~' + text) : text; }
@@ -707,6 +708,11 @@
     return {start: s.value, end: e.value, text: uniprotApplyFuzzyPrefix(text, s.fuzzy || e.fuzzy), type: f.type};
   }
   function uniprotNormalizeDescription(desc){ return (desc||'').trim().toLowerCase(); }
+  function uniprotTruncateDescription(desc){
+    if(!desc) return '';
+    var idx = desc.search(/[;,]/);
+    return (idx === -1 ? desc : desc.slice(0, idx)).trim();
+  }
   function uniprotMemberLabel(f){
     var s = uniprotFuzzyValue(f.location.start), e = uniprotFuzzyValue(f.location.end);
     return (s.value === e.value) ? String(s.value) : (s.value + '-' + e.value);
@@ -719,7 +725,7 @@
     var length = entry.sequence.length;
     var features = entry.features || [];
 
-    var domainCandidates = [], motifCandidates = [], labelCandidates = [], annotationCandidates = [];
+    var domainCandidates = [], motifCandidates = [], labelCandidates = [], annotationCandidates = [], ptmCandidates = [];
 
     features.forEach(function(f){
       if(UNIPROT_DOMAIN_TYPES.indexOf(f.type) !== -1){
@@ -728,6 +734,15 @@
         motifCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
       } else if(UNIPROT_REGION_TYPES.indexOf(f.type) !== -1){
         labelCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
+      } else if(UNIPROT_PTM_LABEL_TYPES.indexOf(f.type) !== -1){
+        var ps = uniprotFuzzyValue(f.location.start);
+        var pLabel = uniprotTruncateDescription(f.description) || f.type;
+        ptmCandidates.push({position: ps.value, text: uniprotApplyFuzzyPrefix(pLabel, ps.fuzzy), type: f.type});
+      } else if(f.type === 'Disulfide bond'){
+        var ds = uniprotFuzzyValue(f.location.start), de = uniprotFuzzyValue(f.location.end);
+        var dLabel = uniprotTruncateDescription(f.description) || f.type;
+        ptmCandidates.push({position: ds.value, text: uniprotApplyFuzzyPrefix(dLabel + ' ↔ ' + de.value, ds.fuzzy), type: f.type});
+        ptmCandidates.push({position: de.value, text: uniprotApplyFuzzyPrefix(dLabel + ' ↔ ' + ds.value, de.fuzzy), type: f.type});
       }
     });
 
@@ -774,8 +789,9 @@
     motifCandidates.sort(function(a,b){ return a.start - b.start; });
     labelCandidates.sort(function(a,b){ return a.start - b.start; });
     annotationCandidates.sort(function(a,b){ return a.position - b.position; });
+    ptmCandidates.sort(function(a,b){ return a.position - b.position; });
 
-    return {name:name, length:length, domainCandidates:domainCandidates, motifCandidates:motifCandidates, labelCandidates:labelCandidates, annotationCandidates:annotationCandidates};
+    return {name:name, length:length, domainCandidates:domainCandidates, motifCandidates:motifCandidates, labelCandidates:labelCandidates, annotationCandidates:annotationCandidates, ptmCandidates:ptmCandidates};
   }
 
   var state = {
@@ -2436,24 +2452,26 @@
   function openUniprotOverlay(){ openOverlay(uniprotOverlay, 'uniprot'); }
   function closeUniprotOverlay(){ closeOverlay(uniprotOverlay, 'uniprot'); }
 
-  function uniprotSectionHTML(sectionKey, title, items, isPosition){
+  function uniprotSectionHTML(sectionKey, title, items, isPosition, defaultChecked){
     if(!items.length) return '';
+    var checkedAttr = defaultChecked ? ' checked' : '';
     var rows = items.map(function(item, i){
       var rangeText = isPosition ? ('residue ' + item.position) : (item.start + '–' + item.end);
       var note = item.combined ? '<div class="uniprot-item-note">combines multiple UniProt features - please edit manually.</div>' : '';
-      return '<label class="uniprot-item-row"><input type="checkbox" checked data-cat="'+sectionKey+'" data-idx="'+i+'"><span><div>'+escapeHtml(item.text)+'</div><div class="uniprot-item-meta">'+escapeHtml(rangeText)+' &middot; '+escapeHtml(item.type)+'</div>'+note+'</span></label>';
+      return '<label class="uniprot-item-row"><input type="checkbox"'+checkedAttr+' data-cat="'+sectionKey+'" data-idx="'+i+'"><span><div>'+escapeHtml(item.text)+'</div><div class="uniprot-item-meta">'+escapeHtml(rangeText)+' &middot; '+escapeHtml(item.type)+'</div>'+note+'</span></label>';
     }).join('');
-    return '<div class="uniprot-section"><h4><label class="uniprot-section-toggle"><input type="checkbox" checked data-select-all="'+sectionKey+'"> '+title+'</label></h4><div class="uniprot-item-list">'+rows+'</div></div>';
+    return '<div class="uniprot-section"><h4><label class="uniprot-section-toggle"><input type="checkbox"'+checkedAttr+' data-select-all="'+sectionKey+'"> '+title+'</label></h4><div class="uniprot-item-list">'+rows+'</div></div>';
   }
 
   function renderUniprotSections(parsed){
     document.getElementById('uniprotProteinName').textContent = parsed.name;
     document.getElementById('uniprotProteinLength').textContent = parsed.length + ' aa';
     var html = '';
-    html += uniprotSectionHTML('domain', 'Domains', parsed.domainCandidates, false);
-    html += uniprotSectionHTML('motif', 'Motifs', parsed.motifCandidates, false);
-    html += uniprotSectionHTML('label', 'Regions', parsed.labelCandidates, false);
-    html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true);
+    html += uniprotSectionHTML('domain', 'Domains', parsed.domainCandidates, false, true);
+    html += uniprotSectionHTML('motif', 'Motifs', parsed.motifCandidates, false, true);
+    html += uniprotSectionHTML('label', 'Regions', parsed.labelCandidates, false, true);
+    html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true, true);
+    html += uniprotSectionHTML('ptm', 'PTM annotations (modified residues, glycosylation, disulfide bonds…)', parsed.ptmCandidates, true, false);
     document.getElementById('uniprotSections').innerHTML = html || '<p class="empty-note">No importable features found on this entry.</p>';
   }
 
@@ -2505,7 +2523,7 @@
 
   document.getElementById('btnUniprotConfirm').addEventListener('click', function(){
     if(!uniprotParsed) return;
-    var checked = {domain:{}, motif:{}, label:{}, annotation:{}};
+    var checked = {domain:{}, motif:{}, label:{}, annotation:{}, ptm:{}};
     Array.prototype.forEach.call(document.querySelectorAll('#uniprotSections input[data-cat]'), function(cb){
       if(cb.checked) checked[cb.dataset.cat][cb.dataset.idx] = true;
     });
@@ -2524,6 +2542,10 @@
     });
     uniprotParsed.annotationCandidates.forEach(function(a, i){
       if(!checked.annotation[i]) return;
+      np.annotations.push({id:uid(), position:a.position, text:a.text});
+    });
+    uniprotParsed.ptmCandidates.forEach(function(a, i){
+      if(!checked.ptm[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
     });
     if(isCanvasBlank()){
