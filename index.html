@@ -252,7 +252,7 @@
 
   .empty-note{font-size:12px;color:var(--ink-soft);font-style:italic;padding:6px 2px 2px;}
 
-  #helpOverlay, #startOverlay{
+  #helpOverlay, #startOverlay, #uniprotOverlay{
     display:none;
     position:fixed;
     inset:0;
@@ -262,7 +262,21 @@
     justify-content:center;
     padding:5vh 20px;
   }
-  #helpOverlay.open, #startOverlay.open{display:flex;}
+  #helpOverlay.open, #startOverlay.open, #uniprotOverlay.open{display:flex;}
+
+  .uniprot-error{color:var(--brick);font-size:13px;}
+  .uniprot-section{margin-bottom:18px;}
+  .uniprot-section h4{
+    font-size:12px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--accent);margin:0 0 8px;font-weight:700;
+  }
+  .uniprot-section-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .uniprot-section-toggle input{accent-color:var(--accent);}
+  .uniprot-item-list{max-height:160px;overflow-y:auto;border:1px solid var(--hairline);border-radius:6px;padding:6px 8px;}
+  .uniprot-item-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:12.5px;cursor:pointer;}
+  .uniprot-item-row input{margin-top:3px;flex-shrink:0;accent-color:var(--accent);}
+  .uniprot-item-meta{color:var(--ink-soft);font-size:11px;}
+  .uniprot-item-note{color:var(--brick);font-size:11px;font-style:italic;}
   .help-panel{
     background:var(--panel);
     border-radius:10px;
@@ -348,8 +362,11 @@
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <input type="text" id="exportFileName" value="domain-mapper" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
-      <button id="btnImport" class="ghost">Import</button>
+      <button id="btnImport" class="ghost">Import JSON</button>
       <button id="btnExportJson" class="ghost">Export JSON</button>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
+      <button id="btnUniprotImport" class="ghost">Import UniProt</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <div class="export-menu">
         <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
@@ -516,8 +533,9 @@
       <h2>Import / Export (header)</h2>
       <ul>
         <li><strong>File name</strong>: base name for all exports</li>
-        <li><strong>Import</strong>: load a <code>.json</code> file, replaces current diagram</li>
+        <li><strong>Import JSON</strong>: load a <code>.json</code> file, replaces current diagram</li>
         <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
+        <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and selectively add them as a new protein (only available on the hosted version, not when run from a local file)</li>
         <li><strong>Export image</strong>: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting</li>
         <li><strong>Load example</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
         <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
@@ -525,6 +543,30 @@
       </ul>
 
       <p>Source, issues, and license: <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">github.com/bms-chem/DomainMapper</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="uniprotOverlay">
+  <div class="help-panel" style="max-width:640px;">
+    <div class="help-panel-header">
+      <h2>Import from UniProt</h2>
+      <button id="btnUniprotClose" class="icon-btn ghost" title="Close">✕</button>
+    </div>
+    <div class="help-panel-body">
+      <div id="uniprotLocalNotice" style="display:none;">
+        <p>Sorry - this feature isn't available when the tool is run locally. Please visit the live version hosted at <a href="https://bms-chem.github.io/DomainMapper/" target="_blank" rel="noopener">https://bms-chem.github.io/DomainMapper/</a> to use UniProt import.</p>
+      </div>
+      <div id="uniprotLoading" style="display:none;">
+        <p>Fetching UniProt entry…</p>
+      </div>
+      <div id="uniprotError" class="uniprot-error" style="display:none;"></div>
+      <div id="uniprotResults" style="display:none;">
+        <h3 id="uniprotProteinName" style="margin:0 0 2px;"></h3>
+        <p id="uniprotProteinLength" style="margin:0 0 16px;color:var(--ink-soft);"></p>
+        <div id="uniprotSections"></div>
+        <button id="btnUniprotConfirm" class="primary" style="width:100%;margin-top:12px;">Import selected features</button>
+      </div>
     </div>
   </div>
 </div>
@@ -599,6 +641,88 @@
     if(typeof p.visible !== 'boolean') p.visible = true;
     if(typeof p.offset !== 'number' || !isFinite(p.offset)) p.offset = 0;
     return p;
+  }
+
+  // ---------- UniProt import parsing ----------
+  var UNIPROT_DOMAIN_TYPES = ['Domain','Repeat','Zinc finger','DNA binding','Coiled coil'];
+  var UNIPROT_REGION_TYPES = ['Region','Compositional bias'];
+  var UNIPROT_SITE_TYPES = ['Active site','Binding site','Site'];
+
+  function uniprotFuzzyValue(loc){ return {value: loc.value, fuzzy: !!loc.fuzzy}; }
+  function uniprotApplyFuzzyPrefix(text, fuzzy){ return fuzzy ? ('~' + text) : text; }
+  function uniprotRangeCandidate(f, text){
+    var s = uniprotFuzzyValue(f.location.start), e = uniprotFuzzyValue(f.location.end);
+    return {start: s.value, end: e.value, text: uniprotApplyFuzzyPrefix(text, s.fuzzy || e.fuzzy), type: f.type};
+  }
+  function uniprotNormalizeDescription(desc){ return (desc||'').trim().toLowerCase(); }
+  function uniprotMemberLabel(f){
+    var s = uniprotFuzzyValue(f.location.start), e = uniprotFuzzyValue(f.location.end);
+    return (s.value === e.value) ? String(s.value) : (s.value + '-' + e.value);
+  }
+
+  function parseUniProtEntry(entry){
+    var rn = entry.proteinDescription && entry.proteinDescription.recommendedName;
+    var name = (rn && rn.fullName && rn.fullName.value) || entry.uniProtkbId || 'Imported protein';
+    var length = entry.sequence.length;
+    var features = entry.features || [];
+
+    var domainCandidates = [], motifCandidates = [], labelCandidates = [], annotationCandidates = [];
+
+    features.forEach(function(f){
+      if(UNIPROT_DOMAIN_TYPES.indexOf(f.type) !== -1){
+        domainCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
+      } else if(f.type === 'Motif'){
+        motifCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
+      } else if(UNIPROT_REGION_TYPES.indexOf(f.type) !== -1){
+        labelCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
+      }
+    });
+
+    // Active site / Binding site / Site: group by shared ligand identity (or
+    // normalized description when no ligand is given) before classifying,
+    // since a multi-residue binding site is often split across several
+    // single-residue features in the UniProt data.
+    var siteFeatures = features.filter(function(f){ return UNIPROT_SITE_TYPES.indexOf(f.type) !== -1; });
+    var groups = {};
+    siteFeatures.forEach(function(f){
+      var ligandName = (f.ligand && f.ligand.name) || null;
+      var key = ligandName ? ('ligand:' + ligandName) : ('desc:' + uniprotNormalizeDescription(f.description));
+      if(!groups[key]) groups[key] = {members:[], ligandName:ligandName, descText: f.description || f.type};
+      groups[key].members.push(f);
+    });
+    Object.keys(groups).forEach(function(key){
+      var g = groups[key];
+      if(g.members.length === 1){
+        var f = g.members[0];
+        var s = uniprotFuzzyValue(f.location.start), e = uniprotFuzzyValue(f.location.end);
+        if(s.value === e.value){
+          annotationCandidates.push({
+            position: s.value,
+            text: uniprotApplyFuzzyPrefix(f.description || f.type, s.fuzzy || e.fuzzy),
+            type: f.type
+          });
+        } else {
+          motifCandidates.push(uniprotRangeCandidate(f, f.description || f.type));
+        }
+      } else {
+        var positions = g.members.map(uniprotMemberLabel);
+        var lowestStart = Math.min.apply(null, g.members.map(function(f){ return uniprotFuzzyValue(f.location.start).value; }));
+        var label = g.ligandName ? (g.ligandName + ' coordination') : g.descText;
+        annotationCandidates.push({
+          position: lowestStart,
+          text: '* ' + label + ': ' + positions.join(', '),
+          type: 'grouped (' + g.members.length + ' features)',
+          combined: true
+        });
+      }
+    });
+
+    domainCandidates.sort(function(a,b){ return a.start - b.start; });
+    motifCandidates.sort(function(a,b){ return a.start - b.start; });
+    labelCandidates.sort(function(a,b){ return a.start - b.start; });
+    annotationCandidates.sort(function(a,b){ return a.position - b.position; });
+
+    return {name:name, length:length, domainCandidates:domainCandidates, motifCandidates:motifCandidates, labelCandidates:labelCandidates, annotationCandidates:annotationCandidates};
   }
 
   var state = {
@@ -2092,6 +2216,122 @@
     };
     reader.onerror = function(){ alert('Could not read file.'); };
     reader.readAsText(file);
+  });
+
+  // ---------- UniProt import UI ----------
+  var uniprotOverlay = document.getElementById('uniprotOverlay');
+  var uniprotLocalNotice = document.getElementById('uniprotLocalNotice');
+  var uniprotLoading = document.getElementById('uniprotLoading');
+  var uniprotErrorEl = document.getElementById('uniprotError');
+  var uniprotResults = document.getElementById('uniprotResults');
+  var uniprotParsed = null;
+
+  function uniprotShowState(which){
+    uniprotLocalNotice.style.display = which === 'local' ? 'block' : 'none';
+    uniprotLoading.style.display = which === 'loading' ? 'block' : 'none';
+    uniprotErrorEl.style.display = which === 'error' ? 'block' : 'none';
+    uniprotResults.style.display = which === 'results' ? 'block' : 'none';
+  }
+  function openUniprotOverlay(){ uniprotOverlay.classList.add('open'); }
+  function closeUniprotOverlay(){ uniprotOverlay.classList.remove('open'); }
+
+  function uniprotSectionHTML(sectionKey, title, items, isPosition){
+    if(!items.length) return '';
+    var rows = items.map(function(item, i){
+      var rangeText = isPosition ? ('residue ' + item.position) : (item.start + '–' + item.end);
+      var note = item.combined ? '<div class="uniprot-item-note">combines multiple UniProt features - please edit manually.</div>' : '';
+      return '<label class="uniprot-item-row"><input type="checkbox" checked data-cat="'+sectionKey+'" data-idx="'+i+'"><span><div>'+escapeHtml(item.text)+'</div><div class="uniprot-item-meta">'+escapeHtml(rangeText)+' &middot; '+escapeHtml(item.type)+'</div>'+note+'</span></label>';
+    }).join('');
+    return '<div class="uniprot-section"><h4><label class="uniprot-section-toggle"><input type="checkbox" checked data-select-all="'+sectionKey+'"> '+title+'</label></h4><div class="uniprot-item-list">'+rows+'</div></div>';
+  }
+
+  function renderUniprotSections(parsed){
+    document.getElementById('uniprotProteinName').textContent = parsed.name;
+    document.getElementById('uniprotProteinLength').textContent = parsed.length + ' aa';
+    var html = '';
+    html += uniprotSectionHTML('domain', 'Domains', parsed.domainCandidates, false);
+    html += uniprotSectionHTML('motif', 'Motifs', parsed.motifCandidates, false);
+    html += uniprotSectionHTML('label', 'Group labels', parsed.labelCandidates, false);
+    html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true);
+    document.getElementById('uniprotSections').innerHTML = html || '<p class="empty-note">No importable features found on this entry.</p>';
+  }
+
+  document.getElementById('uniprotSections').addEventListener('change', function(e){
+    var cb = e.target.closest('[data-select-all]');
+    if(!cb) return;
+    var sectionKey = cb.dataset.selectAll;
+    Array.prototype.forEach.call(document.querySelectorAll('#uniprotSections input[data-cat="'+sectionKey+'"]'), function(item){
+      item.checked = cb.checked;
+    });
+  });
+
+  var uniprotAccessionInput = document.getElementById('uniprotAccessionInput');
+  function runUniprotImport(){
+    var accession = uniprotAccessionInput.value.trim();
+    if(!accession) return;
+    uniprotParsed = null;
+    openUniprotOverlay();
+    if(window.location.protocol === 'file:'){
+      uniprotShowState('local');
+      return;
+    }
+    uniprotShowState('loading');
+    fetch('https://rest.uniprot.org/uniprotkb/' + encodeURIComponent(accession) + '.json')
+      .then(function(res){
+        if(!res.ok) throw new Error(res.status === 404 ? 'accession not found' : ('request failed (HTTP ' + res.status + ')'));
+        return res.json();
+      })
+      .then(function(entry){
+        uniprotParsed = parseUniProtEntry(entry);
+        renderUniprotSections(uniprotParsed);
+        uniprotShowState('results');
+      })
+      .catch(function(err){
+        uniprotErrorEl.textContent = 'Could not import: ' + err.message + '. Check UniProt accession code.';
+        uniprotShowState('error');
+      });
+  }
+  document.getElementById('btnUniprotImport').addEventListener('click', runUniprotImport);
+  uniprotAccessionInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') runUniprotImport();
+  });
+
+  document.getElementById('btnUniprotClose').addEventListener('click', closeUniprotOverlay);
+  uniprotOverlay.addEventListener('click', function(e){
+    if(e.target === uniprotOverlay) closeUniprotOverlay();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && uniprotOverlay.classList.contains('open')) closeUniprotOverlay();
+  });
+
+  document.getElementById('btnUniprotConfirm').addEventListener('click', function(){
+    if(!uniprotParsed) return;
+    var checked = {domain:{}, motif:{}, label:{}, annotation:{}};
+    Array.prototype.forEach.call(document.querySelectorAll('#uniprotSections input[data-cat]'), function(cb){
+      if(cb.checked) checked[cb.dataset.cat][cb.dataset.idx] = true;
+    });
+    var np = withProteinDefaults(newProtein(uniprotParsed.name, uniprotParsed.length));
+    uniprotParsed.domainCandidates.forEach(function(d, i){
+      if(!checked.domain[i]) return;
+      np.domains.push({id:uid(), start:d.start, end:d.end, text:d.text, color: PALETTE[np.domains.length % PALETTE.length]});
+    });
+    uniprotParsed.motifCandidates.forEach(function(m, i){
+      if(!checked.motif[i]) return;
+      np.marks.push({id:uid(), start:m.start, end:m.end, text:m.text, color:'#B5555C'});
+    });
+    uniprotParsed.labelCandidates.forEach(function(l, i){
+      if(!checked.label[i]) return;
+      np.labels.push({id:uid(), start:l.start, end:l.end, text:l.text});
+    });
+    uniprotParsed.annotationCandidates.forEach(function(a, i){
+      if(!checked.annotation[i]) return;
+      np.annotations.push({id:uid(), position:a.position, text:a.text});
+    });
+    state.proteins.push(np);
+    state.activeProteinId = np.id;
+    render();
+    closeUniprotOverlay();
+    document.getElementById('uniprotAccessionInput').value = '';
   });
 
   // ---------- init ----------

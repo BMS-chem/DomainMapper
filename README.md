@@ -24,7 +24,7 @@ Repository: https://github.com/bms-chem/DomainMapper
 - **Motif marks**: annotate regions of interest (e.g. a binding site within a domain)
 - **Annotations**: annotate sites of interest (e.g. a residue, mutation, or interaction partner)
 
-Overlapping group labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).
+Overlapping group labels, motif tags, and annotations will stack to try and avoid collisions.
 
 ## Global settings
 
@@ -34,23 +34,23 @@ Overlapping group labels, motif tags, and annotations stack vertically to try an
 ## Import / Export (header)
 
 - **File name**: base name for all exports
-- **Import**: load a `.json` file, replaces current diagram
+- **Import JSON**: load a `.json` file, replaces current diagram
 - **Export JSON**: full data + all settings that can be re-imported later
-- **Export image**: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting
-- **Load example**: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)
+- **Import UniProt**: enter an accession code to fetch domains, motifs, regions, and binding/active sites from UniProt and add them to a new protein
+- **Export image**: choose SVG or PNG
+- **Load example**: display a worked example
 - **Undo / Redo** (`Ctrl+Z` / `Ctrl+Y`, or `Ctrl+Shift+Z`)
 - **Reset**: clear canvas
 
 
 To do:
 - ability to visually resize domains by dragging?
-- import from uniprot accession?
 - feedback/feature request/bug reporting?
 - rename Group label functionality as Region label
 - colour palettes (change the default at the very least)
-- rename imports to "Import JSON" and "Import UniProt"
 - suggested features/functionality
 - suggested consolidatoin/reorganisation of the UI to retain functionality but make tidier/cleaner
+- recreate worked examples from uniprot import
 - add custom umami tracking events for different exports, imports, worked examples
 - change footer to: Privacy • GitHub • License
 - Privacy gives statement along the lines of: DM uses Umami Analytics to collect anonymous usage statistics such as page visits and activity. Umami and DomainMapper do not record any actual input entered by a user. Umami does not use cookies for analytics and does not collect personally identifiable information or track users across websites.
