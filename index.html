@@ -115,6 +115,29 @@
   }
   .export-popover-confirm{width:100%;margin-top:2px;}
 
+  .field-tooltip{
+    position:fixed;
+    background:var(--ink);
+    color:#fff;
+    font-size:11.5px;
+    padding:5px 9px;
+    border-radius:5px;
+    pointer-events:none;
+    z-index:2000;
+    opacity:0;
+    transition:opacity .15s;
+    white-space:nowrap;
+  }
+  .field-tooltip.show{opacity:1;}
+  .field-tooltip::after{
+    content:'';
+    position:absolute;
+    bottom:100%;
+    left:16px;
+    border:5px solid transparent;
+    border-bottom-color:var(--ink);
+  }
+
   /* settings drawer */
   #settingsPanel{
     display:flex;
@@ -345,7 +368,7 @@
     <div class="title-block">
       <span class="rule"></span>
       <h1>DomainMapper</h1>
-      <span class="subtitle">to-scale protein domain schematics</span>
+      <span class="subtitle">easy protein domain schematics</span>
     </div>
     <div class="toolbar">
       <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
@@ -362,13 +385,12 @@
       <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <input type="text" id="exportFileName" value="domain-mapper" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
-      <button id="btnImport" class="ghost">Import JSON</button>
-      <button id="btnExportJson" class="ghost">Export JSON</button>
-      <span class="settings-divider" style="height:26px;align-self:center;"></span>
       <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
       <button id="btnUniprotImport" class="ghost">Import UniProt</button>
+      <button id="btnImport" class="ghost">Import JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <input type="text" id="exportFileName" placeholder="File name" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
+      <button id="btnExportJson" class="ghost">Export JSON</button>
       <div class="export-menu">
         <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
         <div id="exportPopover" class="export-popover" role="menu">
@@ -484,16 +506,22 @@
     <div class="help-panel-body">
       <p>Choose how you'd like to start.</p>
 
+      <button id="btnStartBlank" style="width:100%;margin-bottom:12px;">Start with a blank canvas</button>
+
+      <div id="startRestoreRow" style="margin-bottom:12px;"></div>
+
       <div class="field-row" style="margin-bottom:16px;">
+        <label style="width:auto;margin-right:8px;">Import UniProt</label>
+        <input type="text" id="startUniprotAccessionInput" placeholder="UniProt accession" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;flex:1;background:#fff;color:var(--ink);">
+        <button id="btnStartUniprotImport" class="ghost" style="margin-left:8px;">Import</button>
+      </div>
+
+      <div class="field-row" style="margin-bottom:0;">
         <label style="width:auto;margin-right:8px;">Worked example</label>
         <select id="startExampleSelect" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;flex:1;">
           <option value="" selected>Choose an example…</option>
         </select>
       </div>
-
-      <div id="startRestoreRow" style="margin-bottom:12px;"></div>
-
-      <button id="btnStartBlank" style="width:100%;">Start with a blank canvas</button>
     </div>
   </div>
 </div>
@@ -505,49 +533,47 @@
       <button id="btnHelpClose" class="icon-btn ghost" title="Close">✕</button>
     </div>
     <div class="help-panel-body">
-      <p>Single-file HTML tool for to-scale protein domain schematics.</p>
+      <p>Browser tool for building maps of protein architecture.</p>
 
-      <h2>Proteins (sidebar list)</h2>
+      <h2>Toolbar</h2>
       <ul>
-        <li><strong>+ Add</strong>: new protein</li>
-        <li>Checkbox: show/hide in diagram</li>
-        <li>Click name: select for editing</li>
-        <li>↑ / ↓: reorder</li>
-        <li>⧉: duplicate</li>
-        <li>✕: delete</li>
+        <li><strong>Load example</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
+        <li><strong>Reset</strong>: clear canvas</li> 
+        <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
+        <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and selectively add them as a new protein</li>
+        <li><strong>Import JSON</strong>: load a previous <code>.json</code> file, replaces current diagram</li>
+        <li><strong>File name</strong>: base name for all exports</li>
+        <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
+        <li><strong>Export image</strong>: choose SVG or PNG</li>
       </ul>
-
-      <h2>Protein editor</h2>
-      <ul>
-        <li><strong>Name</strong>, <strong>Length</strong> (aa)</li>
-        <li><strong>Show start/end residues on each domain</strong>: on/off</li>
-        <li><strong>Domain box</strong>: format appearance of protein domains (shape, corner radius, border style/width/colour)</li>
-        <li><strong>Coordinate axis</strong>: format appearance of the residue coordinate axis (colour, weight)</li>
-        <li><strong>Region labels</strong>: label regions of domains, or areas of the protein (e.g. "disordered region")</li>
-        <li><strong>Domains</strong>: annotate protein domains</li>
-        <li><strong>Motif marks</strong>: annotate regions of interest (e.g. a binding site within a domain)</li>
-        <li><strong>Annotations</strong>: annotate sites of interest (e.g. a residue, mutation, or interaction partner)</li>
-      </ul>
-      <p>Overlapping region labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
-
-      <h2>Global settings</h2>
+      
+      <h2>General formatting</h2>
       <ul>
         <li>Format text for protein names, domain names, annotations</li>
         <li>Axis length: sets absolute horizontal width of longest displayed protein; other proteins are always scaled in relation to the longest one.</li>
       </ul>
 
-      <h2>Import / Export (header)</h2>
+      <h2>Protein list</h2>
       <ul>
-        <li><strong>File name</strong>: base name for all exports</li>
-        <li><strong>Import JSON</strong>: load a <code>.json</code> file, replaces current diagram</li>
-        <li><strong>Export JSON</strong>: full data + all settings that can be re-imported later</li>
-        <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and selectively add them as a new protein (only available on the hosted version, not when run from a local file)</li>
-        <li><strong>Export image</strong>: choose SVG (vector) or PNG (raster); PNG also offers a transparent-background option and a resolution (dpi) setting</li>
-        <li><strong>Load example</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
-        <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
-        <li><strong>Reset</strong>: clear canvas</li>
+        <li><strong>+ Add</strong>: new protein</li>
+        <li>Checkbox: show/hide in diagram</li>
+        <li>Click name to select for editing</li>
+        <li>↑ / ↓: reorder</li>
+        <li>⧉: duplicate</li>
+        <li>✕: delete</li>
       </ul>
 
+      <h2>Protein formatting</h2>
+      <ul>
+        <li><strong>Details</strong>: Name, Length (aa), Offset, and coordinate axis formatting (colour, weight)</li>
+        <li><strong>Domains</strong>: toggle showing start/end residues on each domain, format domain box appearance (shape, corner radius, border style/width/colour), and annotate protein domains</li>
+        <li><strong>Regions</strong>: label regions of domains, or areas of the protein (e.g. "disordered region")</li>
+        <li><strong>Motifs</strong>: annotate regions of interest (e.g. a binding site within a domain)</li>
+        <li><strong>Annotations</strong>: annotate sites of interest (e.g. a residue, mutation, or interaction partner)</li>
+      </ul>
+      <p>Overlapping region labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
+
+      <h2>GitHub and feedback</h2>
       <p>Source, issues, and license: <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">github.com/bms-chem/DomainMapper</a></p>
       <p>Found a bug or have a suggestion? <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=bug_report.yml" target="_blank" rel="noopener">Report a bug</a> · <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=feature_request.yml" target="_blank" rel="noopener">Suggest a feature</a></p>
     </div>
@@ -1329,6 +1355,17 @@
     resetHistory();
     closeStart();
   });
+  document.getElementById('btnStartUniprotImport').addEventListener('click', function(){
+    var startAccessionInput = document.getElementById('startUniprotAccessionInput');
+    var val = startAccessionInput.value.trim();
+    if(!val){ showFieldTooltip(startAccessionInput, 'Enter UniProt accession code!'); return; }
+    uniprotAccessionInput.value = val;
+    closeStart();
+    runUniprotImport();
+  });
+  document.getElementById('startUniprotAccessionInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('btnStartUniprotImport').click();
+  });
   startOverlay.addEventListener('click', function(e){
     if(e.target === startOverlay) closeStart();
   });
@@ -1373,15 +1410,17 @@
 
     var html = '';
 
-    html += '<div class="section-label">Protein details</div>';
+    html += '<div class="section-label">Details</div>';
     html += '<div class="field-row"><label>Name</label><input type="text" data-section="protein" data-field="name" data-protein="'+p.id+'" value="'+escapeAttr(p.name)+'"></div>';
     html += '<div class="field-row"><label>Length</label><input type="number" min="1" data-section="protein" data-field="length" data-protein="'+p.id+'" value="'+p.length+'"></div>';
     html += '<div class="field-row"><label>Offset</label><input type="number" step="1" style="max-width:90px;" data-section="protein" data-field="offset" data-protein="'+p.id+'" value="'+(p.offset||0)+'">' +
       '<button class="icon-btn ghost" data-action="nudge-left" data-protein="'+p.id+'" title="Nudge left 10 residues">←</button>' +
       '<button class="icon-btn ghost" data-action="nudge-right" data-protein="'+p.id+'" title="Nudge right 10 residues">→</button></div>';
-    html += '<div class="field-row"><label>Range</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="protein" data-field="showDomainResidues" data-protein="'+p.id+'" '+(p.showDomainResidues?'checked':'')+'> Show start/end residues on each domain</label></div>';
+    html += '<div class="field-row"><label>Axis</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="axis" data-field="color" data-protein="'+p.id+'" value="'+p.axis.color+'">' +
+      '<label style="width:auto;margin-left:8px;">Weight</label><input type="number" min="1" max="12" step="0.5" style="max-width:64px;" data-section="axis" data-field="weight" data-protein="'+p.id+'" value="'+p.axis.weight+'"></div>';
 
-    html += '<div class="section-label">Domain box</div>';
+    html += '<div class="section-label">Domains</div>';
+    html += '<div class="field-row"><label>Range</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="protein" data-field="showDomainResidues" data-protein="'+p.id+'" '+(p.showDomainResidues?'checked':'')+'> Show start/end residues on each domain</label></div>';
     html += '<div class="field-row"><label>Shape</label><select data-section="box" data-field="shape" data-protein="'+p.id+'">' +
       '<option value="rect"'+(p.box.shape==='rect'?' selected':'')+'>Rectangle</option>' +
       '<option value="rounded"'+(p.box.shape==='rounded'?' selected':'')+'>Rounded rectangle</option>' +
@@ -1395,20 +1434,15 @@
       '</select></div>';
     html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
+    html += sectionTableBody(p.id, 'domain', p.domains, [
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
+    ], 'Boxes drawn to scale along the backbone.', 'domain');
 
-    html += '<div class="section-label">Coordinate axis</div>';
-    html += '<div class="field-row"><label>Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="axis" data-field="color" data-protein="'+p.id+'" value="'+p.axis.color+'">' +
-      '<label style="width:auto;margin-left:8px;">Weight</label><input type="number" min="1" max="12" step="0.5" style="max-width:64px;" data-section="axis" data-field="weight" data-protein="'+p.id+'" value="'+p.axis.weight+'"></div>';
-
-    html += sectionTable('Region labels', p.id, 'label', p.labels, [
+    html += sectionTable('Regions', p.id, 'label', p.labels, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
     ], 'Spans of text above the domain row, e.g. a shared functional annotation.');
 
-    html += sectionTable('Domains', p.id, 'domain', p.domains, [
-      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
-    ], 'Boxes drawn to scale along the backbone.');
-
-    html += sectionTable('Motif marks', p.id, 'mark', p.marks, [
+    html += sectionTable('Motifs', p.id, 'mark', p.marks, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Tag (optional)'}, {field:'color', type:'color'}
     ], 'Thin highlighted bars inside domains, e.g. short linear motifs.');
 
@@ -1420,7 +1454,11 @@
   }
 
   function sectionTable(title, proteinId, section, items, columns, hint){
-    var h = '<div class="section-label">'+title+'</div>';
+    return '<div class="section-label">'+title+'</div>' + sectionTableBody(proteinId, section, items, columns, hint, title.toLowerCase().replace(/s$/,''));
+  }
+
+  function sectionTableBody(proteinId, section, items, columns, hint, addLabel){
+    var h = '';
     if(items.length === 0){
       h += '<div class="empty-note">'+hint+'</div>';
     } else {
@@ -1446,7 +1484,7 @@
       });
       h += '</tbody></table>';
     }
-    h += '<button class="add-row-btn" data-action="add-'+section+'" data-protein="'+proteinId+'">+ Add '+title.toLowerCase().replace(/s$/,'')+'</button>';
+    h += '<button class="add-row-btn" data-action="add-'+section+'" data-protein="'+proteinId+'">+ Add '+addLabel+'</button>';
     return h;
   }
 
@@ -2122,7 +2160,7 @@
   document.getElementById('btnReset').addEventListener('click', function(){
     state.proteins = [newProtein('Protein 1', 400)];
     state.activeProteinId = state.proteins[0].id;
-    document.getElementById('exportFileName').value = 'domain-mapper';
+    document.getElementById('exportFileName').value = '';
     clearSavedState();
     render();
   });
@@ -2146,6 +2184,27 @@
   }
 
   function track(name, data){ if(window.umami && umami.track) umami.track(name, data); }
+
+  var activeFieldTooltip = null;
+  function showFieldTooltip(inputEl, message){
+    if(activeFieldTooltip) activeFieldTooltip.remove();
+    var tip = document.createElement('div');
+    tip.className = 'field-tooltip';
+    tip.textContent = message;
+    document.body.appendChild(tip);
+    var rect = inputEl.getBoundingClientRect();
+    tip.style.left = rect.left + 'px';
+    tip.style.top = (rect.bottom + 8) + 'px';
+    requestAnimationFrame(function(){ tip.classList.add('show'); });
+    activeFieldTooltip = tip;
+    function hide(){
+      if(tip.parentNode) tip.remove();
+      if(activeFieldTooltip === tip) activeFieldTooltip = null;
+      inputEl.removeEventListener('input', hide);
+    }
+    inputEl.addEventListener('input', hide);
+    setTimeout(hide, 2500);
+  }
 
   function download(blob, filename){
     var url = URL.createObjectURL(blob);
@@ -2291,7 +2350,7 @@
     var html = '';
     html += uniprotSectionHTML('domain', 'Domains', parsed.domainCandidates, false);
     html += uniprotSectionHTML('motif', 'Motifs', parsed.motifCandidates, false);
-    html += uniprotSectionHTML('label', 'Region labels', parsed.labelCandidates, false);
+    html += uniprotSectionHTML('label', 'Regions', parsed.labelCandidates, false);
     html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true);
     document.getElementById('uniprotSections').innerHTML = html || '<p class="empty-note">No importable features found on this entry.</p>';
   }
@@ -2308,7 +2367,7 @@
   var uniprotAccessionInput = document.getElementById('uniprotAccessionInput');
   function runUniprotImport(){
     var accession = uniprotAccessionInput.value.trim();
-    if(!accession) return;
+    if(!accession){ showFieldTooltip(uniprotAccessionInput, 'Enter UniProt accession code!'); return; }
     uniprotParsed = null;
     openUniprotOverlay();
     if(window.location.protocol === 'file:'){
