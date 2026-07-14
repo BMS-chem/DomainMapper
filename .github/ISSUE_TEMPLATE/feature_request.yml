@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an improvement or new feature
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - UniProt import / parsing
+        - Canvas customization (colours, shapes, fonts, layout)
+        - Domains / Region labels / Motif marks / Annotations
+        - Export / Import
+        - Other
+    validations:
+      required: true

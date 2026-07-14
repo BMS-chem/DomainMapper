@@ -155,6 +155,7 @@
   }
   footer#appFooter a{color:var(--ink-soft);text-decoration:none;}
   footer#appFooter a:hover{color:var(--accent);text-decoration:underline;}
+  footer#appFooter .footer-links{display:flex;align-items:center;gap:6px;}
 
   #main{display:flex;flex:1;min-height:0;overflow:hidden;}
   #sidebar{
@@ -252,7 +253,7 @@
 
   .empty-note{font-size:12px;color:var(--ink-soft);font-style:italic;padding:6px 2px 2px;}
 
-  #helpOverlay, #startOverlay, #uniprotOverlay{
+  #helpOverlay, #startOverlay, #uniprotOverlay, #privacyOverlay{
     display:none;
     position:fixed;
     inset:0;
@@ -262,7 +263,7 @@
     justify-content:center;
     padding:5vh 20px;
   }
-  #helpOverlay.open, #startOverlay.open, #uniprotOverlay.open{display:flex;}
+  #helpOverlay.open, #startOverlay.open, #uniprotOverlay.open, #privacyOverlay.open{display:flex;}
 
   .uniprot-error{color:var(--brick);font-size:13px;}
   .uniprot-section{margin-bottom:18px;}
@@ -466,7 +467,12 @@
 
   <footer id="appFooter">
     <span>DomainMapper v1.0 · Ben Mortishire-Smith</span>
-    <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">GitHub</a>
+    <div class="footer-links">
+      <a href="https://github.com/bms-chem/DomainMapper/issues/new/choose" target="_blank" rel="noopener" data-umami-event="feedback_click">Feedback</a> ·
+      <a href="#" id="btnPrivacy">Privacy</a> ·
+      <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://github.com/bms-chem/DomainMapper/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
+    </div>
   </footer>
 </div>
 
@@ -517,12 +523,12 @@
         <li><strong>Show start/end residues on each domain</strong>: on/off</li>
         <li><strong>Domain box</strong>: format appearance of protein domains (shape, corner radius, border style/width/colour)</li>
         <li><strong>Coordinate axis</strong>: format appearance of the residue coordinate axis (colour, weight)</li>
-        <li><strong>Group labels</strong>: label groups of domains, or areas of the protein (e.g. "disordered region")</li>
+        <li><strong>Region labels</strong>: label regions of domains, or areas of the protein (e.g. "disordered region")</li>
         <li><strong>Domains</strong>: annotate protein domains</li>
         <li><strong>Motif marks</strong>: annotate regions of interest (e.g. a binding site within a domain)</li>
         <li><strong>Annotations</strong>: annotate sites of interest (e.g. a residue, mutation, or interaction partner)</li>
       </ul>
-      <p>Overlapping group labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
+      <p>Overlapping region labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).</p>
 
       <h2>Global settings</h2>
       <ul>
@@ -543,6 +549,19 @@
       </ul>
 
       <p>Source, issues, and license: <a href="https://github.com/bms-chem/DomainMapper" target="_blank" rel="noopener">github.com/bms-chem/DomainMapper</a></p>
+      <p>Found a bug or have a suggestion? <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=bug_report.yml" target="_blank" rel="noopener">Report a bug</a> · <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=feature_request.yml" target="_blank" rel="noopener">Suggest a feature</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="privacyOverlay">
+  <div class="help-panel">
+    <div class="help-panel-header">
+      <h2>Privacy</h2>
+      <button id="btnPrivacyClose" class="icon-btn ghost" title="Close">✕</button>
+    </div>
+    <div class="help-panel-body">
+      <p>DomainMapper uses Umami Analytics to collect anonymous usage statistics such as page visits and feature usage. Umami does not use cookies, does not collect personally identifiable information, and does not track you across other websites. No protein, domain, or other diagram data you enter into DomainMapper is ever recorded or sent to Umami.</p>
     </div>
   </div>
 </div>
@@ -554,6 +573,7 @@
       <button id="btnUniprotClose" class="icon-btn ghost" title="Close">✕</button>
     </div>
     <div class="help-panel-body">
+      <p>If you would like additional types of UniProt annotations to be imported, please <a href="https://github.com/bms-chem/DomainMapper/issues/new?template=feature_request.yml" target="_blank" rel="noopener">submit a suggestion</a>.</p>
       <div id="uniprotLocalNotice" style="display:none;">
         <p>Sorry - this feature isn't available when the tool is run locally. Please visit the live version hosted at <a href="https://bms-chem.github.io/DomainMapper/" target="_blank" rel="noopener">https://bms-chem.github.io/DomainMapper/</a> to use UniProt import.</p>
       </div>
@@ -662,7 +682,8 @@
 
   function parseUniProtEntry(entry){
     var rn = entry.proteinDescription && entry.proteinDescription.recommendedName;
-    var name = (rn && rn.fullName && rn.fullName.value) || entry.uniProtkbId || 'Imported protein';
+    var geneName = entry.genes && entry.genes[0] && entry.genes[0].geneName && entry.genes[0].geneName.value;
+    var name = geneName || (rn && rn.fullName && rn.fullName.value) || entry.uniProtkbId || 'Imported protein';
     var length = entry.sequence.length;
     var features = entry.features || [];
 
@@ -1136,6 +1157,7 @@
   function loadExampleByKey(key){
     var builder = EXAMPLE_BUILDERS[key];
     if(!builder) return;
+    track('load_example', {key: key});
     var result = builder();
     var isGroup = result && Array.isArray(result.proteins);
     var proteins = (isGroup ? result.proteins : [result]).map(withProteinDefaults);
@@ -1261,6 +1283,18 @@
     if(e.key === 'Escape' && helpOverlay.classList.contains('open')) closeHelp();
   });
 
+  var privacyOverlay = document.getElementById('privacyOverlay');
+  function openPrivacy(){ privacyOverlay.classList.add('open'); }
+  function closePrivacy(){ privacyOverlay.classList.remove('open'); }
+  document.getElementById('btnPrivacy').addEventListener('click', function(e){ e.preventDefault(); openPrivacy(); });
+  document.getElementById('btnPrivacyClose').addEventListener('click', closePrivacy);
+  privacyOverlay.addEventListener('click', function(e){
+    if(e.target === privacyOverlay) closePrivacy();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && privacyOverlay.classList.contains('open')) closePrivacy();
+  });
+
   var startOverlay = document.getElementById('startOverlay');
   function closeStart(){ startOverlay.classList.remove('open'); }
   var startExampleSelect = document.getElementById('startExampleSelect');
@@ -1366,7 +1400,7 @@
     html += '<div class="field-row"><label>Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="axis" data-field="color" data-protein="'+p.id+'" value="'+p.axis.color+'">' +
       '<label style="width:auto;margin-left:8px;">Weight</label><input type="number" min="1" max="12" step="0.5" style="max-width:64px;" data-section="axis" data-field="weight" data-protein="'+p.id+'" value="'+p.axis.weight+'"></div>';
 
-    html += sectionTable('Group labels', p.id, 'label', p.labels, [
+    html += sectionTable('Region labels', p.id, 'label', p.labels, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
     ], 'Spans of text above the domain row, e.g. a shared functional annotation.');
 
@@ -1629,7 +1663,7 @@
     return Math.max(structural, regionExtent(cls.below, true));
   }
 
-  // Greedy interval-scheduling lane assignment: group labels whose x-ranges would
+  // Greedy interval-scheduling lane assignment: region labels whose x-ranges would
   // overlap are stacked into separate lanes instead of drawing on top of each other.
   function assignLabelLanes(p, xFn, domainFontSize){
     var items = p.labels.map(function(l){
@@ -1689,7 +1723,7 @@
     return a;
   }
 
-  // Measures every text element (group labels, motif tags, domain names, end/residue
+  // Measures every text element (region labels, motif tags, domain names, end/residue
   // numbers, annotations, and the right-anchored protein name) against a zero-margin
   // baseline, and returns however much left/right canvas padding is needed so nothing
   // gets clipped — independent of the axis-length setting, which only controls the
@@ -2111,6 +2145,8 @@
     return raw || 'domain-mapper';
   }
 
+  function track(name, data){ if(window.umami && umami.track) umami.track(name, data); }
+
   function download(blob, filename){
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -2123,6 +2159,7 @@
     var svgStr = serializeSvg(!transparent);
     var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     download(blob, getExportBaseName() + '.svg');
+    track('export_svg');
   }
 
   function exportPng(transparent, scale){
@@ -2144,6 +2181,7 @@
       ctx.drawImage(img, 0, 0, w, h);
       canvas.toBlob(function(blob){
         download(blob, getExportBaseName() + '.png');
+        track('export_png');
         URL.revokeObjectURL(url);
       });
     };
@@ -2176,6 +2214,7 @@
     };
     var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
     download(blob, getExportBaseName() + '.json');
+    track('export_json');
   }
 
   function importJSONText(str){
@@ -2206,6 +2245,7 @@
     reader.onload = function(){
       try{
         importJSONText(reader.result);
+        track('import_json');
         syncSettingsControls();
         render();
         resetHistory();
@@ -2251,7 +2291,7 @@
     var html = '';
     html += uniprotSectionHTML('domain', 'Domains', parsed.domainCandidates, false);
     html += uniprotSectionHTML('motif', 'Motifs', parsed.motifCandidates, false);
-    html += uniprotSectionHTML('label', 'Group labels', parsed.labelCandidates, false);
+    html += uniprotSectionHTML('label', 'Region labels', parsed.labelCandidates, false);
     html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true);
     document.getElementById('uniprotSections').innerHTML = html || '<p class="empty-note">No importable features found on this entry.</p>';
   }
@@ -2329,6 +2369,7 @@
     });
     state.proteins.push(np);
     state.activeProteinId = np.id;
+    track('import_uniprot', {accession: uniprotAccessionInput.value.trim()});
     render();
     closeUniprotOverlay();
     document.getElementById('uniprotAccessionInput').value = '';

@@ -19,12 +19,12 @@ Repository: https://github.com/bms-chem/DomainMapper
 - **Show start/end residues on each domain**: on/off
 - **Domain box**: format appearance of protein domains (shape, corner radius, border style/width/colour)
 - **Coordinate axis**: format appearance of the residue coordinate axis (colour, weight)
-- **Group labels**: label groups of domains, or areas of the protein (e.g. "disordered region")
+- **Region labels**: label regions of domains, or areas of the protein (e.g. "disordered region")
 - **Domains**: annotate protein domains
 - **Motif marks**: annotate regions of interest (e.g. a binding site within a domain)
 - **Annotations**: annotate sites of interest (e.g. a residue, mutation, or interaction partner)
 
-Overlapping group labels, motif tags, and annotations will stack to try and avoid collisions.
+Overlapping region labels, motif tags, and annotations stack vertically to try and avoid overlaps (up to a point).
 
 ## Global settings
 
@@ -45,12 +45,7 @@ Overlapping group labels, motif tags, and annotations will stack to try and avoi
 
 To do:
 - ability to visually resize domains by dragging?
-- feedback/feature request/bug reporting?
-- rename Group label functionality as Region label
 - colour palettes (change the default at the very least)
 - suggested features/functionality
 - suggested consolidatoin/reorganisation of the UI to retain functionality but make tidier/cleaner
 - recreate worked examples from uniprot import
-- add custom umami tracking events for different exports, imports, worked examples
-- change footer to: Privacy • GitHub • License
-- Privacy gives statement along the lines of: DM uses Umami Analytics to collect anonymous usage statistics such as page visits and activity. Umami and DomainMapper do not record any actual input entered by a user. Umami does not use cookies for analytics and does not collect personally identifiable information or track users across websites.
