@@ -373,7 +373,7 @@
     <div class="toolbar">
       <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
         <option value="" selected>Load example</option>
-        <option value="classvitrim">Class VI TRIM family</option>
+        <option value="classvitrim">Class VI TRIMs</option>
         <option value="egfr">EGFR</option>
         <option value="hif1a">HIF-1α</option>
         <option value="ipah98">IpaH9.8</option>
@@ -385,7 +385,7 @@
       <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
+      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
       <button id="btnUniprotImport" class="ghost">Import UniProt</button>
       <button id="btnImport" class="ghost">Import JSON</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
@@ -512,7 +512,7 @@
 
       <div class="field-row" style="margin-bottom:16px;">
         <label style="width:auto;margin-right:8px;">Import UniProt</label>
-        <input type="text" id="startUniprotAccessionInput" placeholder="UniProt accession" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;flex:1;background:#fff;color:var(--ink);">
+        <input type="text" id="startUniprotAccessionInput" placeholder="UniProt accession e.g. P53350" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;flex:1;background:#fff;color:var(--ink);">
         <button id="btnStartUniprotImport" class="ghost" style="margin-left:8px;">Import</button>
       </div>
 
@@ -537,7 +537,7 @@
 
       <h2>Toolbar</h2>
       <ul>
-        <li><strong>Load example</strong>: display a worked example (Class VI TRIM family, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
+        <li><strong>Load example</strong>: display a worked example (Class VI TRIMs, EGFR, HIF-1α, IpaH9.8, NRF2, SRC, TXN)</li>
         <li><strong>Reset</strong>: clear canvas</li> 
         <li><strong>Undo / Redo</strong> (<code>Ctrl+Z</code> / <code>Ctrl+Y</code>, or <code>Ctrl+Shift+Z</code>)</li>
         <li><strong>Import UniProt</strong>: enter an accession to fetch domains, motifs, regions, and binding/active sites from UniProt and selectively add them as a new protein</li>
@@ -1136,7 +1136,7 @@
   }
   function buildExampleClassVITrim(){
     return {
-      groupName: 'Class VI TRIM family',
+      groupName: 'Class VI TRIMs',
       proteins: [buildTrim24(), buildTrim28(), buildTrim33Family()]
     };
   }

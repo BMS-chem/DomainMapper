@@ -40,4 +40,3 @@ To do:
 - ability to visually resize domains by dragging?
 - colour palettes (change the default at the very least)
 - suggested features/functionality
-- recreate worked examples from uniprot import
