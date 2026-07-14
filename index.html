@@ -786,6 +786,13 @@
   };
   state.activeProteinId = state.proteins[0].id;
 
+  function isCanvasBlank(){
+    if(state.proteins.length !== 1) return false;
+    var p = state.proteins[0];
+    return p.name === 'Protein 1' && p.length === 400 && p.offset === 0 &&
+      !p.domains.length && !p.labels.length && !p.marks.length && !p.annotations.length;
+  }
+
   // ---------- persistence ----------
   var STORAGE_KEY = 'domain-architect-state';
   var SAVE_DEBOUNCE_MS = 400;
@@ -2426,7 +2433,12 @@
       if(!checked.annotation[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
     });
-    state.proteins.push(np);
+    if(isCanvasBlank()){
+      state.proteins = [np];
+      resetHistory();
+    } else {
+      state.proteins.push(np);
+    }
     state.activeProteinId = np.id;
     track('import_uniprot', {accession: uniprotAccessionInput.value.trim()});
     render();

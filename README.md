@@ -37,6 +37,7 @@ Overlapping region labels, motif tags, and annotations stack vertically to try a
 
 
 To do:
-- ability to visually resize domains by dragging?
 - colour palettes (change the default at the very least)
 - suggested features/functionality
+- reverse vertical stacking for above line collision avoidance
+- ability to re-order motifs in the list (which affects vertical stacking in the plot)
