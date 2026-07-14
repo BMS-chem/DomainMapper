@@ -86,6 +86,9 @@
   button.danger-text:hover{background:var(--brick-soft);border-radius:5px;}
   button.icon-btn{padding:4px 8px;font-size:12px;}
   button:disabled{opacity:.35;cursor:not-allowed;}
+  table.item-table td.row-actions{display:flex;align-items:center;white-space:nowrap;}
+  .row-move-stack{display:inline-flex;flex-direction:column;vertical-align:middle;margin-right:2px;}
+  .row-move-stack button.icon-btn{display:block;width:100%;padding:0 5px;font-size:9px;line-height:13px;}
 
   .export-menu{position:relative;display:inline-flex;}
   .export-popover{
@@ -1443,7 +1446,7 @@
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
-    ], 'Boxes drawn to scale along the backbone.', 'domain');
+    ], 'Boxes drawn to scale along the backbone.', 'domain', true);
 
     html += sectionTable('Regions', p.id, 'label', p.labels, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
@@ -1451,7 +1454,7 @@
 
     html += sectionTable('Motifs', p.id, 'mark', p.marks, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Tag (optional)'}, {field:'color', type:'color'}
-    ], 'Thin highlighted bars inside domains, e.g. short linear motifs.');
+    ], 'Thin highlighted bars inside domains, e.g. short linear motifs.', true);
 
     html += sectionTable('Annotations', p.id, 'annotation', p.annotations, [
       {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text (newline = new line)'}
@@ -1460,11 +1463,11 @@
     editorPanelEl.innerHTML = html;
   }
 
-  function sectionTable(title, proteinId, section, items, columns, hint){
-    return '<div class="section-label">'+title+'</div>' + sectionTableBody(proteinId, section, items, columns, hint, title.toLowerCase().replace(/s$/,''));
+  function sectionTable(title, proteinId, section, items, columns, hint, reorderable){
+    return '<div class="section-label">'+title+'</div>' + sectionTableBody(proteinId, section, items, columns, hint, title.toLowerCase().replace(/s$/,''), reorderable);
   }
 
-  function sectionTableBody(proteinId, section, items, columns, hint, addLabel){
+  function sectionTableBody(proteinId, section, items, columns, hint, addLabel, reorderable){
     var h = '';
     if(items.length === 0){
       h += '<div class="empty-note">'+hint+'</div>';
@@ -1472,7 +1475,7 @@
       h += '<table class="item-table"><thead><tr>';
       columns.forEach(function(c){ h += '<th>'+(c.label || capitalize(c.field))+'</th>'; });
       h += '<th></th></tr></thead><tbody>';
-      items.forEach(function(item){
+      items.forEach(function(item, i){
         h += '<tr>';
         columns.forEach(function(c){
           var val = item[c.field];
@@ -1486,7 +1489,15 @@
             h += '<td><input type="text" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+escapeAttr(val)+'"></td>';
           }
         });
-        h += '<td><button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove">✕</button></td>';
+        h += '<td class="row-actions">';
+        if(reorderable){
+          h += '<span class="row-move-stack">' +
+            '<button class="icon-btn ghost" data-action="move-'+section+'-up" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===0?'disabled':'')+' title="Move up">▲</button>' +
+            '<button class="icon-btn ghost" data-action="move-'+section+'-down" data-protein="'+proteinId+'" data-item="'+item.id+'" '+(i===items.length-1?'disabled':'')+' title="Move down">▼</button>' +
+          '</span>';
+        }
+        h += '<button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove">✕</button>';
+        h += '</td>';
         h += '</tr>';
       });
       h += '</tbody></table>';
@@ -1920,7 +1931,10 @@
 
       if(labelLayout.numLanes){
         labelLayout.items.forEach(function(item){
-          var laneTop = cursor + item.lane * LABEL_LANE_H;
+          // lane 0 (where most non-colliding labels land, per assignLabelLanes' greedy
+          // packer) is placed closest to the track and keeps a fixed gap to it; only
+          // genuinely-colliding labels, in higher lane numbers, move further away, upwards
+          var laneTop = cursor + (labelLayout.numLanes - 1 - item.lane) * LABEL_LANE_H;
           var cx = (item.x1 + item.x2) / 2;
           svgEl.appendChild(text(cx, laneTop+14, item.label.text, {
             'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'700', 'font-size':fDomain.size, fill: INK
@@ -2138,6 +2152,16 @@
 
     if(action === 'nudge-left'){ p.offset = (p.offset||0) - 10; render(); return; }
     if(action === 'nudge-right'){ p.offset = (p.offset||0) + 10; render(); return; }
+
+    var moveMatch = /^move-(domain|mark)-(up|down)$/.exec(action);
+    if(moveMatch){
+      var arr = p[moveMatch[1] + 's'];
+      var mi = arr.findIndex(function(it){ return it.id === btn.dataset.item; });
+      var mj = moveMatch[2] === 'up' ? mi - 1 : mi + 1;
+      if(mi < 0 || mj < 0 || mj >= arr.length) return;
+      var mtmp = arr[mi]; arr[mi] = arr[mj]; arr[mj] = mtmp;
+      render(); return;
+    }
 
     if(action === 'add-label'){ p.labels.push(newLabel()); render(); return; }
     if(action === 'remove-label'){ p.labels = p.labels.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }

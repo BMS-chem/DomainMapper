@@ -38,6 +38,5 @@ Overlapping region labels, motif tags, and annotations stack vertically to try a
 
 To do:
 - colour palettes (change the default at the very least)
-- suggested features/functionality
-- reverse vertical stacking for above line collision avoidance
-- ability to re-order motifs in the list (which affects vertical stacking in the plot)
+- suggested features/functionality1
+- two left side panels: the first one with proteins, the second one for formatting of the selected protein
