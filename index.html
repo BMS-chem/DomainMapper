@@ -62,7 +62,9 @@
   }
   header .app-logo{align-self:center;flex-shrink:0;}
   header .subtitle{font-size:12.5px;color:var(--ink-soft);}
-  header .toolbar{display:flex;gap:8px;flex-wrap:wrap;}
+  header .toolbar{display:flex;gap:8px;flex-wrap:wrap;position:relative;}
+  .toolbar-more-trigger{display:none;}
+  .toolbar-more{display:contents;}
 
   button{
     font-family:'IBM Plex Sans',sans-serif;
@@ -367,6 +369,38 @@
     #sidebar{width:100%;max-width:none;border-right:none;border-bottom:1px solid var(--hairline);max-height:46vh;}
     .settings-divider{display:none;}
   }
+
+  @media (max-width: 600px){
+    html, body{height:100%;overflow:hidden;}
+    #app{height:100vh;overflow:hidden;}
+    #main{flex-direction:column;overflow:hidden;}
+    #sidebar{max-height:38vh;overflow-y:auto;}
+    #canvasSection{flex:1;min-height:0;}
+
+    .toolbar-more-trigger{display:inline-flex;}
+    .toolbar-more{
+      display:none;
+      position:absolute;
+      top:100%;
+      right:0;
+      margin-top:6px;
+      flex-direction:column;
+      gap:6px;
+      background:var(--panel);
+      border:1px solid var(--hairline);
+      border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.15);
+      padding:10px;
+      z-index:60;
+      max-width:calc(100vw - 32px);
+    }
+    .toolbar-more.open{display:flex;}
+    .toolbar-more .settings-divider{width:100%;height:1px !important;margin:2px 0;}
+    #uniprotAccessionInput, #exportFileName{width:100%;}
+
+    .settings-group{min-width:140px;}
+    table.item-table input[type=number]{width:44px;}
+  }
 </style>
 </head>
 <body>
@@ -382,22 +416,8 @@
       <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
-        <option value="" selected>Load example</option>
-        <option value="classvitrim">Class VI TRIMs</option>
-        <option value="egfr">EGFR</option>
-        <option value="hif1a">HIF-1α</option>
-        <option value="ipah98">IpaH9.8</option>
-        <option value="nrf2">NRF2</option>
-        <option value="src">SRC</option>
-        <option value="txn">TXN</option>
-      </select>
       <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
       <button id="btnUniprotImport" class="ghost">Import UniProt</button>
-      <button id="btnImport" class="ghost">Import JSON</button>
-      <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <input type="text" id="exportFileName" placeholder="File name" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
-      <button id="btnExportJson" class="ghost">Export JSON</button>
       <div class="export-menu">
         <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
         <div id="exportPopover" class="export-popover" role="menu">
@@ -422,12 +442,29 @@
           <button id="btnExportConfirm" class="primary export-popover-confirm">Export</button>
         </div>
       </div>
-      <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <button id="btnToggleSettings" class="ghost" aria-expanded="false" aria-controls="settingsPanel">Formatting ▾</button>
-      <button id="btnReset" class="ghost">Reset</button>
-      <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <button id="btnHelp" class="ghost">? Help</button>
-      <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+      <button id="btnToolbarMore" class="ghost icon-btn toolbar-more-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="toolbarMore">⋯ More</button>
+      <div id="toolbarMore" class="toolbar-more">
+        <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
+          <option value="" selected>Load example</option>
+          <option value="classvitrim">Class VI TRIMs</option>
+          <option value="egfr">EGFR</option>
+          <option value="hif1a">HIF-1α</option>
+          <option value="ipah98">IpaH9.8</option>
+          <option value="nrf2">NRF2</option>
+          <option value="src">SRC</option>
+          <option value="txn">TXN</option>
+        </select>
+        <button id="btnImport" class="ghost">Import JSON</button>
+        <span class="settings-divider" style="height:26px;align-self:center;"></span>
+        <input type="text" id="exportFileName" placeholder="File name" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
+        <button id="btnExportJson" class="ghost">Export JSON</button>
+        <span class="settings-divider" style="height:26px;align-self:center;"></span>
+        <button id="btnToggleSettings" class="ghost" aria-expanded="false" aria-controls="settingsPanel">Formatting ▾</button>
+        <button id="btnReset" class="ghost">Reset</button>
+        <span class="settings-divider" style="height:26px;align-self:center;"></span>
+        <button id="btnHelp" class="ghost">? Help</button>
+        <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+      </div>
     </div>
   </header>
 
@@ -1322,6 +1359,28 @@
     var willOpen = settingsPanelEl.classList.contains('collapsed');
     settingsPanelEl.classList.toggle('collapsed');
     btnToggleSettings.setAttribute('aria-expanded', String(willOpen));
+  });
+
+  // ---------- mobile toolbar "More" menu ----------
+  var btnToolbarMore = document.getElementById('btnToolbarMore');
+  var toolbarMoreEl = document.getElementById('toolbarMore');
+  btnToolbarMore.addEventListener('click', function(e){
+    e.stopPropagation();
+    var willOpen = !toolbarMoreEl.classList.contains('open');
+    toolbarMoreEl.classList.toggle('open', willOpen);
+    btnToolbarMore.setAttribute('aria-expanded', String(willOpen));
+  });
+  toolbarMoreEl.addEventListener('click', function(e){
+    if(e.target.tagName === 'BUTTON'){
+      toolbarMoreEl.classList.remove('open');
+      btnToolbarMore.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('click', function(e){
+    if(!toolbarMoreEl.classList.contains('open')) return;
+    if(toolbarMoreEl.contains(e.target) || btnToolbarMore.contains(e.target)) return;
+    toolbarMoreEl.classList.remove('open');
+    btnToolbarMore.setAttribute('aria-expanded', 'false');
   });
 
   document.getElementById('btnUndo').addEventListener('click', doUndo);
