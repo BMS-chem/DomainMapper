@@ -349,7 +349,7 @@
     padding-bottom:6px;
   }
   .help-panel-body h2:first-child{margin-top:0;}
-  .help-panel-body p{margin:0 0 10px;}
+  .help-panel-body p{margin:0 0 10px;text-align:justify;}
   .help-panel-body ul{margin:0 0 4px;padding-left:20px;}
   .help-panel-body li{margin-bottom:6px;}
   .help-panel-body code{
@@ -416,32 +416,6 @@
       <button id="btnUndo" class="ghost icon-btn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
       <button id="btnRedo" class="ghost icon-btn" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
       <span class="settings-divider" style="height:26px;align-self:center;"></span>
-      <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
-      <button id="btnUniprotImport" class="ghost">Import UniProt</button>
-      <div class="export-menu">
-        <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
-        <div id="exportPopover" class="export-popover" role="menu">
-          <div class="export-popover-row">
-            <label><input type="radio" name="exportFormat" id="exportFormatSvg" value="svg"> SVG</label>
-            <label><input type="radio" name="exportFormat" id="exportFormatPng" value="png" checked> PNG</label>
-          </div>
-          <div id="exportPngOptions" class="export-popover-row export-popover-png-options">
-            <label class="export-popover-checkbox">
-              <input type="checkbox" id="transparentBg">Transparent background
-            </label>
-            <label class="export-popover-field">
-              Resolution
-              <select id="exportDpi">
-                <option value="96">96 dpi (screen)</option>
-                <option value="150">150 dpi (web/hi-DPI)</option>
-                <option value="300" selected>300 dpi (print)</option>
-                <option value="600">600 dpi (high-res print)</option>
-              </select>
-            </label>
-          </div>
-          <button id="btnExportConfirm" class="primary export-popover-confirm">Export</button>
-        </div>
-      </div>
       <button id="btnToolbarMore" class="ghost icon-btn toolbar-more-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="toolbarMore">⋯ More</button>
       <div id="toolbarMore" class="toolbar-more">
         <select id="exampleSelect" title="Load a worked example" style="font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;">
@@ -454,17 +428,43 @@
           <option value="src">SRC</option>
           <option value="txn">TXN</option>
         </select>
+        <input type="text" id="uniprotAccessionInput" placeholder="UniProt accession e.g. P53350" title="e.g. P00533" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:260px;background:#fff;color:var(--ink);">
+        <button id="btnUniprotImport" class="ghost">Import UniProt</button>
         <button id="btnImport" class="ghost">Import JSON</button>
         <span class="settings-divider" style="height:26px;align-self:center;"></span>
         <input type="text" id="exportFileName" placeholder="File name" title="File name used for exports" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border:1px solid var(--hairline);border-radius:6px;width:150px;background:#fff;color:var(--ink);">
         <button id="btnExportJson" class="ghost">Export JSON</button>
+        <div class="export-menu">
+          <button id="btnExport" class="primary" aria-haspopup="true" aria-expanded="false">Export image ▾</button>
+          <div id="exportPopover" class="export-popover" role="menu">
+            <div class="export-popover-row">
+              <label><input type="radio" name="exportFormat" id="exportFormatSvg" value="svg"> SVG</label>
+              <label><input type="radio" name="exportFormat" id="exportFormatPng" value="png" checked> PNG</label>
+            </div>
+            <div id="exportPngOptions" class="export-popover-row export-popover-png-options">
+              <label class="export-popover-checkbox">
+                <input type="checkbox" id="transparentBg">Transparent background
+              </label>
+              <label class="export-popover-field">
+                Resolution
+                <select id="exportDpi">
+                  <option value="96">96 dpi (screen)</option>
+                  <option value="150">150 dpi (web/hi-DPI)</option>
+                  <option value="300" selected>300 dpi (print)</option>
+                  <option value="600">600 dpi (high-res print)</option>
+                </select>
+              </label>
+            </div>
+            <button id="btnExportConfirm" class="primary export-popover-confirm">Export</button>
+          </div>
+        </div>
         <span class="settings-divider" style="height:26px;align-self:center;"></span>
         <button id="btnToggleSettings" class="ghost" aria-expanded="false" aria-controls="settingsPanel">Formatting ▾</button>
         <button id="btnReset" class="ghost">Reset</button>
-        <span class="settings-divider" style="height:26px;align-self:center;"></span>
-        <button id="btnHelp" class="ghost">? Help</button>
         <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
       </div>
+      <span class="settings-divider" style="height:26px;align-self:center;"></span>
+      <button id="btnHelp" class="ghost">? Help</button>
     </div>
   </header>
 
@@ -551,6 +551,15 @@
       <h2 id="startOverlayTitle">DomainMapper</h2>
     </div>
     <div class="help-panel-body">
+      <p>A protein domain map is a conceptual schematic of a protein, showing its domains, motifs, and sites of interest drawn to scale along the sequence. They are a useful way to visualise protein architecture and compare between related proteins.</p>
+      <p>DomainMapper is a tool to easily build clean protein schematics in your browser, starting from scratch or by importing annotations from UniProt. Figures can be exported in various formats for use in publications and presentations.</p>
+      <p>The tool is designed to be fast and convenient rather than comprehensive, but results can be exported as editable SVGs for further customization offline.</p>
+
+      <!-- Placeholder: replace with <img src="..." alt="Example DomainMapper output" style="max-width:100%;border:1px solid var(--hairline);border-radius:6px;"> once an example image is available -->
+      <div style="border:1px dashed var(--hairline);border-radius:6px;padding:24px;margin-bottom:16px;text-align:center;color:var(--ink-soft);font-size:12.5px;">Example output — image coming soon</div>
+
+      <p style="margin-bottom:16px;"><a href="#" id="startOpenHelp">See the full help guide →</a></p>
+
       <p>Choose how you'd like to start.</p>
 
       <button id="btnStartBlank" style="width:100%;margin-bottom:12px;">Start with a blank canvas</button>
@@ -1486,6 +1495,10 @@
 
   var startOverlay = document.getElementById('startOverlay');
   function closeStart(){ closeOverlay(startOverlay, 'start'); }
+  document.getElementById('startOpenHelp').addEventListener('click', function(e){
+    e.preventDefault();
+    openHelp();
+  });
   var startExampleSelect = document.getElementById('startExampleSelect');
   Array.prototype.forEach.call(document.querySelectorAll('#exampleSelect option'), function(opt){
     if(!opt.value) return;
@@ -1690,10 +1703,22 @@
 
   // Decide which side (above/below the backbone) each annotation renders on.
   // Default is 'below'; an annotation flips to the opposite side of its immediate
-  // neighbour (in x-order) whenever their estimated label widths would overlap.
-  function textHalfWidth(str, fontSize){
-    var len = Math.max(1, String(str).length);
-    return Math.max(8, (len * fontSize * 0.6) / 2) + 4;
+  // neighbour (in x-order) whenever their real rendered label widths would overlap.
+  // Real widths are measured via a hidden scratch <text> node with getComputedTextLength(),
+  // matched to the exact font-family/size/weight each label type is actually drawn with —
+  // attached to svgEl for the duration of layout in renderCanvas(), then removed before any
+  // real content is appended (see renderCanvas).
+  var measureTextEl = null;
+  function measureTextWidth(str, fontFamily, fontSize, fontWeight){
+    measureTextEl.setAttribute('font-family', fontFamily);
+    measureTextEl.setAttribute('font-size', fontSize);
+    measureTextEl.setAttribute('font-weight', fontWeight || '400');
+    measureTextEl.textContent = str || '';
+    return measureTextEl.getComputedTextLength();
+  }
+
+  function textHalfWidth(str, fontFamily, fontSize, fontWeight){
+    return Math.max(8, measureTextWidth(str, fontFamily, fontSize, fontWeight) / 2) + 4;
   }
 
   function overlaps(ax, aHalf, bx, bHalf){
@@ -1706,9 +1731,9 @@
   // "start" label when they'd collide, since the residues are adjacent in sequence anyway.
   // The row is therefore always a single line; collisions are resolved by omission, not
   // by stacking into extra lanes.
-  function computeVisibleEndNumbers(p, xFn, numberFontSize){
+  function computeVisibleEndNumbers(p, xFn, numberFontFamily, numberFontSize){
     function mkItem(ax, text, isProtein){
-      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontSize), isProtein:isProtein};
+      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontFamily, numberFontSize, '400'), isProtein:isProtein};
     }
     var items = [
       mkItem(xFn(0), '1', true),
@@ -1749,8 +1774,8 @@
   // Structural row(s) below the domain: the end-number row, which also carries
   // per-domain start/end residue obstacles when that option is enabled. Colliding
   // labels are hidden rather than stacked, so this is always exactly one row tall.
-  function belowRows(p, xFn, numberFontSize){
-    var endNumberLaneInfo = computeVisibleEndNumbers(p, xFn, numberFontSize);
+  function belowRows(p, xFn, numberFontFamily, numberFontSize){
+    var endNumberLaneInfo = computeVisibleEndNumbers(p, xFn, numberFontFamily, numberFontSize);
     var obstacles = endNumberLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
     var rows = [{name:'endnum', height:ENDNUM_H, obstacles:obstacles}];
     return {rows:rows, endNumberLaneInfo:endNumberLaneInfo};
@@ -1758,10 +1783,10 @@
 
   // Greedy interval-scheduling lane assignment for motif tags: tags whose estimated
   // text width would overlap are stacked into separate lanes instead of drawing on top.
-  function assignMarkTagLanes(p, xFn, numberFontSize){
+  function assignMarkTagLanes(p, xFn, numberFontFamily, numberFontSize){
     var items = p.marks.filter(function(m){ return m.text && m.text.trim().length; }).map(function(m){
       var ax = xFn(m.start-1) + Math.max(2.5, xFn(m.end)-xFn(m.start-1))/2;
-      return {mark:m, ax:ax, halfWidth:textHalfWidth(m.text, numberFontSize)};
+      return {mark:m, ax:ax, halfWidth:textHalfWidth(m.text, numberFontFamily, numberFontSize, '400')};
     });
     items.sort(function(a,b){ return a.ax - b.ax; });
     var laneEnds = [];
@@ -1785,8 +1810,8 @@
 
   // Structural row(s) above the domain: plain motif-tag text (no connector line),
   // sitting directly above the box, stacked into lanes when tags would collide.
-  function aboveRows(p, xFn, numberFontSize){
-    var markLaneInfo = assignMarkTagLanes(p, xFn, numberFontSize);
+  function aboveRows(p, xFn, numberFontFamily, numberFontSize){
+    var markLaneInfo = assignMarkTagLanes(p, xFn, numberFontFamily, numberFontSize);
     var hasMarkText = markLaneInfo.items.length > 0;
     var rows = [];
     if(hasMarkText){
@@ -1806,18 +1831,21 @@
     return required;
   }
 
-  function classifyAnnotations(p, xFn, fontSize, numberFontSize){
-    var approxCharW = fontSize * 0.58;
-    var belowInfo = belowRows(p, xFn, numberFontSize);
-    var aboveInfo = aboveRows(p, xFn, numberFontSize);
+  // Annotations always render at a fixed 11.5px size (see the multilineText() calls
+  // in renderCanvas), independent of the protein-name font-size setting — measurement
+  // mirrors that existing behavior rather than changing it.
+  var ANNOT_FONT_SIZE = '11.5';
+  function classifyAnnotations(p, xFn, fontFamily, numberFontFamily, numberFontSize){
+    var belowInfo = belowRows(p, xFn, numberFontFamily, numberFontSize);
+    var aboveInfo = aboveRows(p, xFn, numberFontFamily, numberFontSize);
 
     var items = p.annotations.map(function(a){
       var lines = String(a.text||'').split('\n');
-      var maxLineLen = lines.reduce(function(m,l){ return Math.max(m, l.length); }, 1);
+      var maxLineWidth = lines.reduce(function(m,l){ return Math.max(m, measureTextWidth(l, fontFamily, ANNOT_FONT_SIZE, '400')); }, 0);
       return {
         ann: a,
         ax: xFn(a.position),
-        halfWidth: Math.max(10, (maxLineLen * approxCharW) / 2) + 6,
+        halfWidth: Math.max(10, maxLineWidth / 2) + 6,
         lineCount: lines.length
       };
     });
@@ -1832,19 +1860,58 @@
       prev = item;
     });
 
-    // dynamic line length on both sides: default is short and equal; only extend
-    // past whichever structural row(s) this annotation's x-position actually overlaps
-    items.forEach(function(item){
-      if(item.side === 'below'){
-        item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, belowInfo.rows);
-      } else {
-        item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, aboveInfo.rows);
-      }
-    });
-
     var below = items.filter(function(i){ return i.side === 'below'; });
     var above = items.filter(function(i){ return i.side === 'above'; });
+    assignAnnotationLanes(below);
+    assignAnnotationLanes(above);
+
+    // dynamic line length on both sides: default is short and equal; only extend
+    // past whichever structural row(s) this annotation's x-position actually overlaps,
+    // plus however far its stacking lane pushes it beyond nearer, still-clashing annotations
+    below.forEach(function(item){
+      item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, belowInfo.rows) + item.laneOffset;
+    });
+    above.forEach(function(item){
+      item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, aboveInfo.rows) + item.laneOffset;
+    });
+
     return {below:below, above:above, hasMarkText:aboveInfo.hasMarkText, belowRows:belowInfo.rows, aboveRows:aboveInfo.rows, markLaneInfo:aboveInfo.markLaneInfo, endNumberLaneInfo:belowInfo.endNumberLaneInfo};
+  }
+
+  // Fallback for annotations that still clash in x after the above/below flip pass:
+  // greedy interval-scheduling lane assignment, same pattern as assignMarkTagLanes,
+  // run independently within each side. Lane 0 sits closest to the backbone; each
+  // further lane is pushed out by the tallest (possibly multi-line) item already
+  // occupying the lane(s) inside it, mirroring the fixed per-lane height used by
+  // region-label and motif-tag lanes.
+  function assignAnnotationLanes(items){
+    items.sort(function(a,b){ return a.ax - b.ax; });
+    var laneEnds = [];
+    items.forEach(function(item){
+      var placed = false;
+      for(var i=0; i<laneEnds.length; i++){
+        if((item.ax - item.halfWidth) > laneEnds[i] + 8){
+          laneEnds[i] = item.ax + item.halfWidth;
+          item.lane = i;
+          placed = true;
+          break;
+        }
+      }
+      if(!placed){
+        item.lane = laneEnds.length;
+        laneEnds.push(item.ax + item.halfWidth);
+      }
+    });
+    var laneHeight = [];
+    items.forEach(function(item){
+      var h = item.lineCount * ANNOT_LINE_H + ANNOT_TEXT_GAP;
+      if(!laneHeight[item.lane] || h > laneHeight[item.lane]) laneHeight[item.lane] = h;
+    });
+    var laneOffset = [0];
+    for(var i=1; i<laneHeight.length; i++){
+      laneOffset[i] = laneOffset[i-1] + laneHeight[i-1];
+    }
+    items.forEach(function(item){ item.laneOffset = laneOffset[item.lane]; });
   }
 
   function regionExtent(items, includeAscentOffset){
@@ -1872,11 +1939,11 @@
 
   // Greedy interval-scheduling lane assignment: region labels whose x-ranges would
   // overlap are stacked into separate lanes instead of drawing on top of each other.
-  function assignLabelLanes(p, xFn, domainFontSize){
+  function assignLabelLanes(p, xFn, domainFontFamily, domainFontSize){
     var items = p.labels.map(function(l){
       var x1 = xFn(l.start), x2 = xFn(Math.max(l.end, l.start));
       var cx = (x1 + x2) / 2;
-      var textHalf = textHalfWidth(l.text, domainFontSize);
+      var textHalf = textHalfWidth(l.text, domainFontFamily, domainFontSize, '700');
       // collision uses whichever is wider: the underline span or the rendered text,
       // since a long label over a narrow domain range overflows its underline
       var effX1 = Math.min(x1, cx - textHalf);
@@ -1954,34 +2021,34 @@
 
       // protein name: right-anchored 10px before the track, independent of scale
       // and of this protein's offset (names stay in a fixed left-hand column)
-      var nameFullWidth = textHalfWidth(p.name, proteinSize) * 2;
+      var nameFullWidth = textHalfWidth(p.name, fProtein.family, proteinSize, '700') * 2;
       var nameLeftEdge = -10 - nameFullWidth;
       if(nameLeftEdge < minX) minX = nameLeftEdge;
 
-      assignLabelLanes(p, x0, domainSize).items.forEach(function(item){
+      assignLabelLanes(p, x0, fDomain.family, domainSize).items.forEach(function(item){
         if(item.effX1 < minX) minX = item.effX1;
         if(item.effX2 > maxX) maxX = item.effX2;
       });
 
       p.domains.forEach(function(d){
         var cx = (x0(d.start-1) + x0(d.end)) / 2;
-        widen(cx, textHalfWidth(d.text, domainSize));
+        widen(cx, textHalfWidth(d.text, fDomain.family, domainSize, '600'));
       });
 
-      assignMarkTagLanes(p, x0, numberSize).items.forEach(function(item){
+      assignMarkTagLanes(p, x0, fNumber.family, numberSize).items.forEach(function(item){
         widen(item.ax, item.halfWidth);
       });
 
-      widen(x0(0), textHalfWidth('1', numberSize));
-      widen(x0(p.length), textHalfWidth(String(p.length), numberSize));
+      widen(x0(0), textHalfWidth('1', fNumber.family, numberSize, '400'));
+      widen(x0(p.length), textHalfWidth(String(p.length), fNumber.family, numberSize, '400'));
       if(p.showDomainResidues){
         p.domains.forEach(function(d){
-          widen(x0(d.start-1), textHalfWidth(String(d.start), numberSize));
-          widen(x0(d.end), textHalfWidth(String(d.end), numberSize));
+          widen(x0(d.start-1), textHalfWidth(String(d.start), fNumber.family, numberSize, '400'));
+          widen(x0(d.end), textHalfWidth(String(d.end), fNumber.family, numberSize, '400'));
         });
       }
 
-      var cls = classifyAnnotations(p, x0, proteinSize, numberSize);
+      var cls = classifyAnnotations(p, x0, fProtein.family, fNumber.family, numberSize);
       cls.below.concat(cls.above).forEach(function(item){
         widen(item.ax, item.halfWidth);
       });
@@ -1998,6 +2065,13 @@
 
   function renderCanvas(){
     while(svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+
+    // scratch node for measuring real text widths during layout (see textHalfWidth /
+    // measureTextWidth above); attached only for the duration of the layout computations
+    // below, then removed before any real content is appended, so it never shows up in
+    // the live canvas or in SVG/PNG export serialization.
+    if(!measureTextEl) measureTextEl = el('text', {x:-99999, y:-99999, visibility:'hidden'});
+    svgEl.appendChild(measureTextEl);
 
     var visibleProteins = state.proteins.filter(function(p){ return p.visible !== false; });
 
@@ -2020,11 +2094,13 @@
     };
 
     var classifications = visibleProteins.map(function(p){
-      return classifyAnnotations(p, xFor(p), parseFloat(fProtein.size) || 12, parseFloat(fNumber.size) || 11);
+      return classifyAnnotations(p, xFor(p), fProtein.family, fNumber.family, parseFloat(fNumber.size) || 11);
     });
     var labelLayouts = visibleProteins.map(function(p){
-      return assignLabelLanes(p, xFor(p), parseFloat(fDomain.size) || 12.5);
+      return assignLabelLanes(p, xFor(p), fDomain.family, parseFloat(fDomain.size) || 12.5);
     });
+
+    svgEl.removeChild(measureTextEl);
 
     var totalHeight = TOP_PADDING;
     var blockTops = [];
