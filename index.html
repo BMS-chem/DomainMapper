@@ -490,7 +490,17 @@
     </div>
 
     <div class="settings-group">
-      <div class="settings-group-title">Annotations</div>
+      <div class="settings-group-title">Region name text</div>
+      <div class="settings-row">
+        <select id="fontRegionFamily"></select>
+      </div>
+      <div class="settings-row">
+        <label>Size</label><input type="number" id="fontRegionSize" min="8" max="32" step="0.5">
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">Labels</div>
       <div class="settings-row">
         <select id="fontNumberFamily"></select>
       </div>
@@ -551,12 +561,13 @@
       <h2 id="startOverlayTitle">DomainMapper</h2>
     </div>
     <div class="help-panel-body">
-      <p>A protein domain map is a conceptual schematic of a protein, showing its domains, motifs, and sites of interest drawn to scale along the sequence. They are a useful way to visualise protein architecture and compare between related proteins.</p>
-      <p>DomainMapper is a tool to easily build clean protein schematics in your browser, starting from scratch or by importing annotations from UniProt. Figures can be exported in various formats for use in publications and presentations.</p>
+      <p>A domain map is a conceptual schematic showing the layout of domains, motifs, and sites of interest along a protein. They are a useful way to visualise architecture and compare between related proteins.</p>
+      <p>DomainMapper is a browser-based tool to easily build clean domain maps, starting from scratch or by importing annotations from UniProt, and to produce figures for use in publications and presentations.</p>
       <p>The tool is designed to be fast and convenient rather than comprehensive, but results can be exported as editable SVGs for further customization offline.</p>
 
-      <!-- Placeholder: replace with <img src="..." alt="Example DomainMapper output" style="max-width:100%;border:1px solid var(--hairline);border-radius:6px;"> once an example image is available -->
-      <div style="border:1px dashed var(--hairline);border-radius:6px;padding:24px;margin-bottom:16px;text-align:center;color:var(--ink-soft);font-size:12.5px;">Example output — image coming soon</div>
+      <div style="height:1em;"></div>
+
+      <img src="images/DNMT1_example.png" alt="Example DomainMapper output" style="max-width:100%;border-radius:6px;margin-bottom:16px;">
 
       <p style="margin-bottom:16px;"><a href="#" id="startOpenHelp">See the full help guide →</a></p>
 
@@ -696,7 +707,7 @@
     {label:'Arial', value:"Arial,Helvetica,sans-serif"}
   ];
 
-  var DEFAULT_MARGIN_LEFT = 168;
+  var DEFAULT_MARGIN_LEFT = 120;
   var DEFAULT_MARGIN_RIGHT = 48;
   var EDGE_BUFFER = 10; // extra breathing room beyond any measured text extent
   var TOP_PADDING = 46;
@@ -852,9 +863,10 @@
       font: {
         protein: {family: FONT_OPTIONS[3].value, size: 13},
         domain:  {family: FONT_OPTIONS[3].value, size: 12.5},
+        region:  {family: FONT_OPTIONS[3].value, size: 12.5},
         number:  {family: FONT_OPTIONS[3].value, size: 11}
       },
-      axisLength: {value: 1000, unit: 'px'}
+      axisLength: {value: 850, unit: 'px'}
     }
   };
   state.activeProteinId = state.proteins[0].id;
@@ -1293,11 +1305,13 @@
   }
   var selProteinFamily = document.getElementById('fontProteinFamily');
   var selDomainFamily = document.getElementById('fontDomainFamily');
+  var selRegionFamily = document.getElementById('fontRegionFamily');
   var selNumberFamily = document.getElementById('fontNumberFamily');
-  [selProteinFamily, selDomainFamily, selNumberFamily].forEach(populateFontSelect);
+  [selProteinFamily, selDomainFamily, selRegionFamily, selNumberFamily].forEach(populateFontSelect);
 
   var numProteinSize = document.getElementById('fontProteinSize');
   var numDomainSize = document.getElementById('fontDomainSize');
+  var numRegionSize = document.getElementById('fontRegionSize');
   var numNumberSize = document.getElementById('fontNumberSize');
   var numAxisLengthValue = document.getElementById('axisLengthValue');
   var selAxisLengthUnit = document.getElementById('axisLengthUnit');
@@ -1308,6 +1322,8 @@
     numProteinSize.value = s.font.protein.size;
     selDomainFamily.value = s.font.domain.family;
     numDomainSize.value = s.font.domain.size;
+    selRegionFamily.value = s.font.region.family;
+    numRegionSize.value = s.font.region.size;
     selNumberFamily.value = s.font.number.family;
     numNumberSize.value = s.font.number.size;
     numAxisLengthValue.value = s.axisLength.value;
@@ -1321,6 +1337,8 @@
     s.font.protein.size = parseFloat(numProteinSize.value) || 13;
     s.font.domain.family = selDomainFamily.value;
     s.font.domain.size = parseFloat(numDomainSize.value) || 12.5;
+    s.font.region.family = selRegionFamily.value;
+    s.font.region.size = parseFloat(numRegionSize.value) || 12.5;
     s.font.number.family = selNumberFamily.value;
     s.font.number.size = parseFloat(numNumberSize.value) || 11;
     s.axisLength.value = parseFloat(numAxisLengthValue.value) || 1000;
@@ -1352,6 +1370,7 @@
     var s = state.settings;
     s.font.protein.size = clampSettingField(numProteinSize, 8, 32, 13, 1);
     s.font.domain.size = clampSettingField(numDomainSize, 8, 32, 12.5, 1);
+    s.font.region.size = clampSettingField(numRegionSize, 8, 32, 12.5, 1);
     s.font.number.size = clampSettingField(numNumberSize, 7, 28, 11, 1);
     var axisUnit = selAxisLengthUnit.value;
     var axisMin = axisUnit === 'cm' ? round2(100 / PX_PER_CM) : 100;
@@ -1601,11 +1620,7 @@
       '<option value="pill"'+(p.box.shape==='pill'?' selected':'')+'>Pill / stadium</option>' +
       '</select></div>';
     html += '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="box" data-field="radius" data-protein="'+p.id+'" value="'+p.box.radius+'"></div>';
-    html += '<div class="field-row"><label>Border</label><select data-section="box" data-field="borderStyle" data-protein="'+p.id+'">' +
-      '<option value="solid"'+(p.box.borderStyle==='solid'?' selected':'')+'>Solid</option>' +
-      '<option value="dashed"'+(p.box.borderStyle==='dashed'?' selected':'')+'>Dashed</option>' +
-      '<option value="none"'+(p.box.borderStyle==='none'?' selected':'')+'>None</option>' +
-      '</select></div>';
+    html += '<div class="field-row"><label>Border</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="box" data-field="hasBorder" data-protein="'+p.id+'" '+(p.box.borderStyle!=='none'?'checked':'')+'> Show border</label></div>';
     html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
@@ -1831,17 +1846,15 @@
     return required;
   }
 
-  // Annotations always render at a fixed 11.5px size (see the multilineText() calls
-  // in renderCanvas), independent of the protein-name font-size setting — measurement
-  // mirrors that existing behavior rather than changing it.
-  var ANNOT_FONT_SIZE = '11.5';
-  function classifyAnnotations(p, xFn, fontFamily, numberFontFamily, numberFontSize){
+  // Annotation text shares the "Labels" font family/size with residue numbers and
+  // motif tags (numberFontFamily/numberFontSize) — it only keeps a distinct fill color.
+  function classifyAnnotations(p, xFn, numberFontFamily, numberFontSize){
     var belowInfo = belowRows(p, xFn, numberFontFamily, numberFontSize);
     var aboveInfo = aboveRows(p, xFn, numberFontFamily, numberFontSize);
 
     var items = p.annotations.map(function(a){
       var lines = String(a.text||'').split('\n');
-      var maxLineWidth = lines.reduce(function(m,l){ return Math.max(m, measureTextWidth(l, fontFamily, ANNOT_FONT_SIZE, '400')); }, 0);
+      var maxLineWidth = lines.reduce(function(m,l){ return Math.max(m, measureTextWidth(l, numberFontFamily, numberFontSize, '400')); }, 0);
       return {
         ann: a,
         ax: xFn(a.position),
@@ -2002,9 +2015,10 @@
   // baseline, and returns however much left/right canvas padding is needed so nothing
   // gets clipped — independent of the axis-length setting, which only controls the
   // backbone's own width.
-  function computeRequiredMargins(proteins, pxPerRes, trackWidth, fProtein, fDomain, fNumber){
+  function computeRequiredMargins(proteins, pxPerRes, trackWidth, fProtein, fDomain, fRegion, fNumber){
     var proteinSize = parseFloat(fProtein.size) || 12;
     var domainSize = parseFloat(fDomain.size) || 12.5;
+    var regionSize = parseFloat(fRegion.size) || 12.5;
     var numberSize = parseFloat(fNumber.size) || 11;
     var baseX0 = function(pos){ return pos * pxPerRes; };
 
@@ -2019,13 +2033,13 @@
       var off = p.offset || 0;
       var x0 = function(pos){ return baseX0(pos + off); };
 
-      // protein name: right-anchored 10px before the track, independent of scale
-      // and of this protein's offset (names stay in a fixed left-hand column)
+      // protein name: right-anchored 10px before the track, translated along with
+      // the rest of this protein's schematic by its offset
       var nameFullWidth = textHalfWidth(p.name, fProtein.family, proteinSize, '700') * 2;
-      var nameLeftEdge = -10 - nameFullWidth;
+      var nameLeftEdge = x0(0) - 10 - nameFullWidth;
       if(nameLeftEdge < minX) minX = nameLeftEdge;
 
-      assignLabelLanes(p, x0, fDomain.family, domainSize).items.forEach(function(item){
+      assignLabelLanes(p, x0, fRegion.family, regionSize).items.forEach(function(item){
         if(item.effX1 < minX) minX = item.effX1;
         if(item.effX2 > maxX) maxX = item.effX2;
       });
@@ -2048,7 +2062,7 @@
         });
       }
 
-      var cls = classifyAnnotations(p, x0, fProtein.family, fNumber.family, numberSize);
+      var cls = classifyAnnotations(p, x0, fNumber.family, numberSize);
       cls.below.concat(cls.above).forEach(function(item){
         widen(item.ax, item.halfWidth);
       });
@@ -2081,9 +2095,10 @@
 
     var fProtein = state.settings.font.protein;
     var fDomain = state.settings.font.domain;
+    var fRegion = state.settings.font.region;
     var fNumber = state.settings.font.number;
 
-    var margins = computeRequiredMargins(visibleProteins, pxPerRes, TRACK_WIDTH, fProtein, fDomain, fNumber);
+    var margins = computeRequiredMargins(visibleProteins, pxPerRes, TRACK_WIDTH, fProtein, fDomain, fRegion, fNumber);
     var MARGIN_LEFT = margins.left;
     var MARGIN_RIGHT = margins.right;
     var SVG_WIDTH = MARGIN_LEFT + TRACK_WIDTH + MARGIN_RIGHT;
@@ -2094,10 +2109,10 @@
     };
 
     var classifications = visibleProteins.map(function(p){
-      return classifyAnnotations(p, xFor(p), fProtein.family, fNumber.family, parseFloat(fNumber.size) || 11);
+      return classifyAnnotations(p, xFor(p), fNumber.family, parseFloat(fNumber.size) || 11);
     });
     var labelLayouts = visibleProteins.map(function(p){
-      return assignLabelLanes(p, xFor(p), fDomain.family, parseFloat(fDomain.size) || 12.5);
+      return assignLabelLanes(p, xFor(p), fRegion.family, parseFloat(fRegion.size) || 12.5);
     });
 
     svgEl.removeChild(measureTextEl);
@@ -2164,7 +2179,7 @@
           var laneTop = cursor + (labelLayout.numLanes - 1 - item.lane) * LABEL_LANE_H;
           var cx = (item.x1 + item.x2) / 2;
           svgEl.appendChild(text(cx, laneTop+14, item.label.text, {
-            'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'700', 'font-size':fDomain.size, fill: INK
+            'text-anchor':'middle', 'font-family':fRegion.family, 'font-weight':'700', 'font-size':fRegion.size, fill: INK
           }));
           svgEl.appendChild(el('line', {x1:item.x1, y1:laneTop+22, x2:item.x2, y2:laneTop+22, stroke: INK, 'stroke-width':1.3}));
         });
@@ -2179,14 +2194,14 @@
         var closestBaselineY = lineEndY - ANNOT_TEXT_GAP;
         var topBaseline = closestBaselineY - (item.lineCount-1) * ANNOT_LINE_H;
         svgEl.appendChild(multilineText(item.ax, topBaseline, item.ann.text, {
-          'text-anchor':'middle', 'font-family':fProtein.family, 'font-size':'11.5', fill: INK
+          'text-anchor':'middle', 'font-family':fNumber.family, 'font-size':fNumber.size, fill: INK
         }, ANNOT_LINE_H));
       });
 
       var domainTop = lay.domainTop;
       var backboneY = lay.backboneY;
 
-      svgEl.appendChild(text(MARGIN_LEFT - 10, backboneY+4, p.name, {
+      svgEl.appendChild(text(px(0) - 10, backboneY+4, p.name, {
         'text-anchor':'end', 'font-family':fProtein.family, 'font-weight':'700', 'font-size':fProtein.size, fill: INK
       }));
 
@@ -2248,7 +2263,7 @@
         var lineEndY = lay.domainBottomY + item.lineLength;
         var topBaseline = lineEndY + ANNOT_TEXT_GAP + ANNOT_BASELINE_OFFSET;
         svgEl.appendChild(multilineText(item.ax, topBaseline, item.ann.text, {
-          'text-anchor':'middle', 'font-family':fProtein.family, 'font-size':'11.5', fill: INK
+          'text-anchor':'middle', 'font-family':fNumber.family, 'font-size':fNumber.size, fill: INK
         }, ANNOT_LINE_H));
       });
     });
@@ -2294,7 +2309,9 @@
 
     if(section === 'box'){
       var boxField = t.dataset.field;
-      if(boxField === 'radius' || boxField === 'borderWidth'){
+      if(boxField === 'hasBorder'){
+        p.box.borderStyle = t.checked ? 'solid' : 'none';
+      } else if(boxField === 'radius' || boxField === 'borderWidth'){
         p.box[boxField] = parseFloat(t.value) || 0;
       } else {
         p.box[boxField] = t.value;
@@ -2424,12 +2441,52 @@
   });
 
   // ---------- export ----------
-  function serializeSvg(includeBackground){
+  // The on-screen canvas keeps its generous editing padding (DEFAULT_MARGIN_LEFT/RIGHT,
+  // TOP_PADDING, etc.) so labels/handles never feel cramped while editing. Exports crop
+  // to just the actual content instead, via a bounding-box union of every drawn element.
+  function getContentBBox(){
+    var box = null;
+    Array.prototype.forEach.call(svgEl.children, function(child){
+      if(child.id === 'bgRect') return;
+      var b = child.getBBox();
+      if(b.width === 0 && b.height === 0) return; // skip zero-size (e.g. empty text)
+      if(!box){
+        box = {x1:b.x, y1:b.y, x2:b.x+b.width, y2:b.y+b.height};
+      } else {
+        box.x1 = Math.min(box.x1, b.x);
+        box.y1 = Math.min(box.y1, b.y);
+        box.x2 = Math.max(box.x2, b.x+b.width);
+        box.y2 = Math.max(box.y2, b.y+b.height);
+      }
+    });
+    if(!box){
+      return {x:0, y:0, width:parseFloat(svgEl.getAttribute('width')), height:parseFloat(svgEl.getAttribute('height'))};
+    }
+    return {x:box.x1, y:box.y1, width:box.x2-box.x1, height:box.y2-box.y1};
+  }
+
+  var EXPORT_CROP_MARGIN = 20;
+  function getExportViewport(){
+    var b = getContentBBox();
+    return {x:b.x-EXPORT_CROP_MARGIN, y:b.y-EXPORT_CROP_MARGIN, width:b.width+EXPORT_CROP_MARGIN*2, height:b.height+EXPORT_CROP_MARGIN*2};
+  }
+
+  function serializeSvg(includeBackground, viewport){
     var clone = svgEl.cloneNode(true);
     clone.setAttribute('xmlns', NS);
-    if(!includeBackground){
-      var bg = clone.querySelector('#bgRect');
-      if(bg) bg.parentNode.removeChild(bg);
+    clone.setAttribute('viewBox', viewport.x+' '+viewport.y+' '+viewport.width+' '+viewport.height);
+    clone.setAttribute('width', viewport.width);
+    clone.setAttribute('height', viewport.height);
+    var bg = clone.querySelector('#bgRect');
+    if(includeBackground){
+      if(bg){
+        bg.setAttribute('x', viewport.x);
+        bg.setAttribute('y', viewport.y);
+        bg.setAttribute('width', viewport.width);
+        bg.setAttribute('height', viewport.height);
+      }
+    } else if(bg){
+      bg.parentNode.removeChild(bg);
     }
     return new XMLSerializer().serializeToString(clone);
   }
@@ -2473,16 +2530,18 @@
   }
 
   function exportSvg(transparent){
-    var svgStr = serializeSvg(!transparent);
+    var viewport = getExportViewport();
+    var svgStr = serializeSvg(!transparent, viewport);
     var blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     download(blob, getExportBaseName() + '.svg');
     track('export_svg');
   }
 
   function exportPng(transparent, scale){
-    var svgStr = serializeSvg(!transparent);
-    var w = parseFloat(svgEl.getAttribute('width'));
-    var h = parseFloat(svgEl.getAttribute('height'));
+    var viewport = getExportViewport();
+    var svgStr = serializeSvg(!transparent, viewport);
+    var w = viewport.width;
+    var h = viewport.height;
     var img = new Image();
     var svgBlob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
     var url = URL.createObjectURL(svgBlob);
@@ -2544,6 +2603,7 @@
     if(data.settings && data.settings.font){
       Object.assign(state.settings.font.protein, data.settings.font.protein || {});
       Object.assign(state.settings.font.domain, data.settings.font.domain || {});
+      Object.assign(state.settings.font.region, data.settings.font.region || {});
       Object.assign(state.settings.font.number, data.settings.font.number || {});
     }
     if(data.settings && data.settings.axisLength){
