@@ -1550,16 +1550,19 @@
     resetHistory();
     closeStart();
   });
-  document.getElementById('btnStartUniprotImport').addEventListener('click', function(){
+  function startUniprotImportFromLanding(){
     var startAccessionInput = document.getElementById('startUniprotAccessionInput');
     var val = startAccessionInput.value.trim();
     if(!val){ showFieldTooltip(startAccessionInput, 'Enter UniProt accession code!'); return; }
     uniprotAccessionInput.value = val;
     closeStart();
     runUniprotImport();
-  });
+  }
+  document.getElementById('btnStartUniprotImport').addEventListener('click', startUniprotImportFromLanding);
   document.getElementById('startUniprotAccessionInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') document.getElementById('btnStartUniprotImport').click();
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    startUniprotImportFromLanding();
   });
   startOverlay.addEventListener('click', function(e){
     if(e.target === startOverlay) closeStart();
@@ -2712,7 +2715,9 @@
   }
   document.getElementById('btnUniprotImport').addEventListener('click', runUniprotImport);
   uniprotAccessionInput.addEventListener('keydown', function(e){
-    if(e.key === 'Enter') runUniprotImport();
+    if(e.key !== 'Enter') return;
+    e.preventDefault();
+    runUniprotImport();
   });
 
   document.getElementById('btnUniprotClose').addEventListener('click', closeUniprotOverlay);
