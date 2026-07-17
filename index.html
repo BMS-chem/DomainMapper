@@ -2130,6 +2130,15 @@
     return a;
   }
 
+  // A motif "inside" a domain is one whose range is fully contained by that domain's
+  // range; used so a motif can pick up its containing domain's box style (e.g. Cylinder).
+  var MOTIF_WRAP_BOW = 6; // fixed left-bow amount for both edges of a motif wrapped around a cylinder
+  function containingDomainBox(m, domains, proteinBox){
+    var d = domains.find(function(d){ return d.start <= m.start && d.end >= m.end; });
+    if(!d) return null;
+    return (d.formatIndividually && d.box) ? d.box : proteinBox;
+  }
+
   // Measures every text element (region labels, motif tags, domain names, end/residue
   // numbers, annotations, and the right-anchored protein name) against a zero-margin
   // baseline, and returns however much left/right canvas padding is needed so nothing
@@ -2371,7 +2380,19 @@
       marksByX.forEach(function(m){
         var mx = px(m.start-1);
         var mw = Math.max(2.5, px(m.end) - px(m.start-1));
-        svgEl.appendChild(el('rect', {x:mx, y:domainTop+markInset, width:mw, height:DOMAIN_H-markInset*2, fill:m.color}));
+        var mh = DOMAIN_H - markInset*2;
+        var mBox = containingDomainBox(m, p.domains, p.box);
+        if(mBox && mBox.shape === 'cylinder'){
+          // Both left and right edges bow the same direction (left), like a band
+          // wrapped around the cylinder's curved surface, rather than mirrored caps.
+          var mTop = domainTop+markInset, mBottom = mTop+mh, mMid = domainTop+DOMAIN_H/2;
+          var mxR = mx+mw;
+          var pathD = 'M'+mx+','+mTop+' Q'+(mx-MOTIF_WRAP_BOW)+','+mMid+' '+mx+','+mBottom+
+            ' L'+mxR+','+mBottom+' Q'+(mxR-MOTIF_WRAP_BOW)+','+mMid+' '+mxR+','+mTop+' Z';
+          svgEl.appendChild(el('path', {d:pathD, fill:m.color}));
+        } else {
+          svgEl.appendChild(el('rect', {x:mx, y:domainTop+markInset, width:mw, height:mh, fill:m.color}));
+        }
       });
 
       // domain name text drawn last within this stack so it always sits above
