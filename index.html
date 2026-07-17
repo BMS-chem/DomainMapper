@@ -2346,11 +2346,17 @@
         var dx = px(d.start-1);
         var dw = Math.max(2, px(d.end) - px(d.start-1));
         if(db.shape === 'cylinder'){
-          var capRx = Math.min(6, dw/2);
-          var bodyAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
+          // The straight sides of the body must land exactly on the start/end
+          // residue edges (dx / dx+dw); the elliptical caps bulge outward beyond
+          // that, so the body rect is widened by capRx on each side and inset
+          // by the same amount so its rounded corners' flat run begins at dx/dx+dw.
+          // capRx is fixed (not scaled down for narrow domains) so the caps always
+          // read as a proper ellipse rather than getting visually squashed.
+          var capRx = 6;
+          var bodyAttrs = {x:dx-capRx, y:domainTop, width:dw+capRx*2, height:DOMAIN_H, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
           Object.assign(bodyAttrs, dBorderAttrs);
           svgEl.appendChild(el('rect', bodyAttrs));
-          var rightCapAttrs = {cx:dx+dw-capRx, cy:domainTop+DOMAIN_H/2, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
+          var rightCapAttrs = {cx:dx+dw, cy:domainTop+DOMAIN_H/2, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
           Object.assign(rightCapAttrs, dBorderAttrs);
           svgEl.appendChild(el('ellipse', rightCapAttrs));
         } else {
