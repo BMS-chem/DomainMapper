@@ -310,6 +310,10 @@
   .uniprot-item-row input{margin-top:3px;flex-shrink:0;accent-color:var(--accent);}
   .uniprot-item-meta{color:var(--ink-soft);font-size:11px;}
   .uniprot-item-note{color:var(--brick);font-size:11px;font-style:italic;}
+  .uniprot-topology-row{justify-content:space-between;cursor:default;}
+  .uniprot-topology-label{display:flex;align-items:flex-start;gap:8px;cursor:pointer;flex:1;}
+  .uniprot-topology-label input{margin-top:3px;flex-shrink:0;accent-color:var(--accent);}
+  .uniprot-topology-dest{margin-left:8px;flex-shrink:0;align-self:flex-start;font-size:12px;}
   .help-panel{
     background:var(--panel);
     border-radius:10px;
@@ -762,6 +766,12 @@
   var UNIPROT_REGION_TYPES = ['Region','Compositional bias'];
   var UNIPROT_SITE_TYPES = ['Active site','Binding site','Site'];
   var UNIPROT_PTM_LABEL_TYPES = ['Modified residue','Lipidation','Glycosylation','Cross-link'];
+  var UNIPROT_TOPOLOGY_TYPES = {
+    'Transmembrane': {category:'tm', label:'Transmembrane', dest:'motif'},
+    'Intramembrane': {category:'intramembrane', label:'Intramembrane', dest:'motif'},
+    'Topological domain': {category:'topodomain', label:null, dest:'region'}
+  };
+  var UNIPROT_TOPOLOGY_COLORS = {tm:'#4F7CAC', intramembrane:'#8B6BA6', topodomain:'#5E9B72'};
 
   function uniprotFuzzyValue(loc){ return {value: loc.value, fuzzy: !!loc.fuzzy}; }
   function uniprotApplyFuzzyPrefix(text, fuzzy){ return fuzzy ? ('~' + text) : text; }
@@ -787,7 +797,7 @@
     var length = entry.sequence.length;
     var features = entry.features || [];
 
-    var domainCandidates = [], motifCandidates = [], labelCandidates = [], annotationCandidates = [], ptmCandidates = [];
+    var domainCandidates = [], motifCandidates = [], labelCandidates = [], annotationCandidates = [], ptmCandidates = [], topologyCandidates = [];
 
     features.forEach(function(f){
       if(UNIPROT_DOMAIN_TYPES.indexOf(f.type) !== -1){
@@ -805,6 +815,15 @@
         var dLabel = uniprotTruncateDescription(f.description) || f.type;
         ptmCandidates.push({position: ds.value, text: uniprotApplyFuzzyPrefix(dLabel + ' ↔ ' + de.value, ds.fuzzy), type: f.type});
         ptmCandidates.push({position: de.value, text: uniprotApplyFuzzyPrefix(dLabel + ' ↔ ' + ds.value, de.fuzzy), type: f.type});
+      } else if(UNIPROT_TOPOLOGY_TYPES[f.type]){
+        var tt = UNIPROT_TOPOLOGY_TYPES[f.type];
+        var ts = uniprotFuzzyValue(f.location.start), te = uniprotFuzzyValue(f.location.end);
+        var tText = tt.label || f.description || f.type;
+        topologyCandidates.push({
+          start: ts.value, end: te.value,
+          text: uniprotApplyFuzzyPrefix(tText, ts.fuzzy || te.fuzzy),
+          type: f.type, category: tt.category, defaultDest: tt.dest
+        });
       }
     });
 
@@ -852,8 +871,9 @@
     labelCandidates.sort(function(a,b){ return a.start - b.start; });
     annotationCandidates.sort(function(a,b){ return a.position - b.position; });
     ptmCandidates.sort(function(a,b){ return a.position - b.position; });
+    topologyCandidates.sort(function(a,b){ return a.start - b.start; });
 
-    return {name:name, length:length, domainCandidates:domainCandidates, motifCandidates:motifCandidates, labelCandidates:labelCandidates, annotationCandidates:annotationCandidates, ptmCandidates:ptmCandidates};
+    return {name:name, length:length, domainCandidates:domainCandidates, motifCandidates:motifCandidates, labelCandidates:labelCandidates, annotationCandidates:annotationCandidates, ptmCandidates:ptmCandidates, topologyCandidates:topologyCandidates};
   }
 
   var state = {
@@ -2666,6 +2686,22 @@
     return '<div class="uniprot-section"><h4><label class="uniprot-section-toggle"><input type="checkbox"'+checkedAttr+' data-select-all="'+sectionKey+'"> '+title+'</label></h4><div class="uniprot-item-list">'+rows+'</div></div>';
   }
 
+  function uniprotTopologySectionHTML(items){
+    if(!items.length) return '';
+    var destOptions = {motif:'Motif', domain:'Domain', region:'Region'};
+    var rows = items.map(function(item, i){
+      var rangeText = item.start + '–' + item.end;
+      var opts = ['domain','region','motif'].map(function(v){
+        return '<option value="'+v+'"'+(v===item.defaultDest?' selected':'')+'>'+destOptions[v]+'</option>';
+      }).join('');
+      return '<div class="uniprot-item-row uniprot-topology-row">'
+        + '<label class="uniprot-topology-label"><input type="checkbox" data-cat="topology" data-idx="'+i+'"><span><div>'+escapeHtml(item.text)+'</div><div class="uniprot-item-meta">'+escapeHtml(rangeText)+' &middot; '+escapeHtml(item.type)+'</div></span></label>'
+        + '<select class="uniprot-topology-dest" data-idx="'+i+'">'+opts+'</select>'
+        + '</div>';
+    }).join('');
+    return '<div class="uniprot-section"><h4><label class="uniprot-section-toggle"><input type="checkbox" data-select-all="topology"> Topological annotations</label></h4><div class="uniprot-item-list">'+rows+'</div></div>';
+  }
+
   function renderUniprotSections(parsed){
     document.getElementById('uniprotProteinName').textContent = parsed.name;
     document.getElementById('uniprotProteinLength').textContent = parsed.length + ' aa';
@@ -2675,6 +2711,7 @@
     html += uniprotSectionHTML('label', 'Regions', parsed.labelCandidates, false, true);
     html += uniprotSectionHTML('annotation', 'Annotations', parsed.annotationCandidates, true, true);
     html += uniprotSectionHTML('ptm', 'PTM annotations (modified residues, glycosylation, disulfide bonds…)', parsed.ptmCandidates, true, false);
+    html += uniprotTopologySectionHTML(parsed.topologyCandidates);
     document.getElementById('uniprotSections').innerHTML = html || '<p class="empty-note">No importable features found on this entry.</p>';
   }
 
@@ -2728,7 +2765,7 @@
 
   document.getElementById('btnUniprotConfirm').addEventListener('click', function(){
     if(!uniprotParsed) return;
-    var checked = {domain:{}, motif:{}, label:{}, annotation:{}, ptm:{}};
+    var checked = {domain:{}, motif:{}, label:{}, annotation:{}, ptm:{}, topology:{}};
     Array.prototype.forEach.call(document.querySelectorAll('#uniprotSections input[data-cat]'), function(cb){
       if(cb.checked) checked[cb.dataset.cat][cb.dataset.idx] = true;
     });
@@ -2752,6 +2789,19 @@
     uniprotParsed.ptmCandidates.forEach(function(a, i){
       if(!checked.ptm[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
+    });
+    uniprotParsed.topologyCandidates.forEach(function(t, i){
+      if(!checked.topology[i]) return;
+      var sel = document.querySelector('.uniprot-topology-dest[data-idx="'+i+'"]');
+      var dest = sel ? sel.value : t.defaultDest;
+      var color = UNIPROT_TOPOLOGY_COLORS[t.category];
+      if(dest === 'domain'){
+        np.domains.push({id:uid(), start:t.start, end:t.end, text:t.text, color:color});
+      } else if(dest === 'motif'){
+        np.marks.push({id:uid(), start:t.start, end:t.end, text:t.text, color:color});
+      } else {
+        np.labels.push({id:uid(), start:t.start, end:t.end, text:t.text});
+      }
     });
     if(isCanvasBlank()){
       state.proteins = [np];
