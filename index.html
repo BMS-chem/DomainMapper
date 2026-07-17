@@ -771,7 +771,7 @@
     'Intramembrane': {category:'intramembrane', label:'Intramembrane', dest:'motif'},
     'Topological domain': {category:'topodomain', label:null, dest:'region'}
   };
-  var UNIPROT_TOPOLOGY_COLORS = {tm:'#4F7CAC', intramembrane:'#8B6BA6', topodomain:'#5E9B72'};
+  var UNIPROT_TOPOLOGY_COLORS = {tm:'#C97C5D', intramembrane:'#C9A66B', topodomain:'#7C9EB2'};
 
   function uniprotFuzzyValue(loc){ return {value: loc.value, fuzzy: !!loc.fuzzy}; }
   function uniprotApplyFuzzyPrefix(text, fuzzy){ return fuzzy ? ('~' + text) : text; }
@@ -819,10 +819,14 @@
         var tt = UNIPROT_TOPOLOGY_TYPES[f.type];
         var ts = uniprotFuzzyValue(f.location.start), te = uniprotFuzzyValue(f.location.end);
         var tText = tt.label || f.description || f.type;
+        var tDest = tt.dest;
+        if(f.type === 'Topological domain'){
+          tDest = ((te.value - ts.value + 1) > 100) ? 'region' : 'motif';
+        }
         topologyCandidates.push({
           start: ts.value, end: te.value,
           text: uniprotApplyFuzzyPrefix(tText, ts.fuzzy || te.fuzzy),
-          type: f.type, category: tt.category, defaultDest: tt.dest
+          type: f.type, category: tt.category, defaultDest: tDest
         });
       }
     });
@@ -1641,6 +1645,7 @@
       '<option value="rect"'+(p.box.shape==='rect'?' selected':'')+'>Rectangle</option>' +
       '<option value="rounded"'+(p.box.shape==='rounded'?' selected':'')+'>Rounded rectangle</option>' +
       '<option value="pill"'+(p.box.shape==='pill'?' selected':'')+'>Pill / stadium</option>' +
+      '<option value="cylinder"'+(p.box.shape==='cylinder'?' selected':'')+'>Cylinder (flat)</option>' +
       '</select></div>';
     html += '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="box" data-field="radius" data-protein="'+p.id+'" value="'+p.box.radius+'"></div>';
     html += '<div class="field-row"><label>Border</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="box" data-field="hasBorder" data-protein="'+p.id+'" '+(p.box.borderStyle!=='none'?'checked':'')+'> Show border</label></div>';
@@ -2243,12 +2248,23 @@
 
       var shapeAttrs = boxShapeAttrs(p.box);
       var borderAttrs = boxBorderAttrs(p.box);
-      p.domains.forEach(function(d){
+      var domainsByX = p.domains.slice().sort(function(a,b){ return a.start - b.start; });
+      domainsByX.forEach(function(d){
         var dx = px(d.start-1);
         var dw = Math.max(2, px(d.end) - px(d.start-1));
-        var rectAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, fill:d.color};
-        Object.assign(rectAttrs, shapeAttrs, borderAttrs);
-        svgEl.appendChild(el('rect', rectAttrs));
+        if(p.box.shape === 'cylinder'){
+          var capRx = Math.min(6, dw/2);
+          var bodyAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
+          Object.assign(bodyAttrs, borderAttrs);
+          svgEl.appendChild(el('rect', bodyAttrs));
+          var rightCapAttrs = {cx:dx+dw-capRx, cy:domainTop+DOMAIN_H/2, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
+          Object.assign(rightCapAttrs, borderAttrs);
+          svgEl.appendChild(el('ellipse', rightCapAttrs));
+        } else {
+          var rectAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, fill:d.color};
+          Object.assign(rectAttrs, shapeAttrs, borderAttrs);
+          svgEl.appendChild(el('rect', rectAttrs));
+        }
       });
 
       var markInset = (p.box.borderStyle === 'none') ? 0 : (p.box.borderWidth / 2);
@@ -2790,6 +2806,7 @@
       if(!checked.ptm[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
     });
+    var topologyMotifNamed = {tm:false, intramembrane:false};
     uniprotParsed.topologyCandidates.forEach(function(t, i){
       if(!checked.topology[i]) return;
       var sel = document.querySelector('.uniprot-topology-dest[data-idx="'+i+'"]');
@@ -2798,7 +2815,12 @@
       if(dest === 'domain'){
         np.domains.push({id:uid(), start:t.start, end:t.end, text:t.text, color:color});
       } else if(dest === 'motif'){
-        np.marks.push({id:uid(), start:t.start, end:t.end, text:t.text, color:color});
+        var text = t.text;
+        if(t.category === 'tm' || t.category === 'intramembrane'){
+          if(topologyMotifNamed[t.category]) text = '';
+          else topologyMotifNamed[t.category] = true;
+        }
+        np.marks.push({id:uid(), start:t.start, end:t.end, text:text, color:color});
       } else {
         np.labels.push({id:uid(), start:t.start, end:t.end, text:t.text});
       }
