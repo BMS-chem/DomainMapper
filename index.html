@@ -191,9 +191,9 @@
 
   #main{display:flex;flex:1;min-height:0;overflow:hidden;}
   #sidebar{
-    width:400px;
-    min-width:340px;
-    max-width:440px;
+    width:440px;
+    min-width:375px;
+    max-width:485px;
     min-height:0;
     border-right:1px solid var(--hairline);
     background:var(--panel);
@@ -272,13 +272,16 @@
   table.item-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
   table.item-table th{
     font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);
-    text-align:left;padding:0 4px 4px;font-weight:600;
+    text-align:left;padding:0 4px 4px;font-weight:600;white-space:nowrap;
   }
   table.item-table td{padding:3px 4px;vertical-align:middle;}
   table.item-table input[type=number]{width:56px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 5px;border:1px solid var(--hairline);border-radius:4px;}
   table.item-table input[type=text]{width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--hairline);border-radius:4px;}
   table.item-table textarea{width:100%;font-size:12px;padding:5px 6px;border:1px solid var(--hairline);border-radius:4px;font-family:'IBM Plex Sans',sans-serif;resize:vertical;min-height:32px;}
   table.item-table input[type=color]{width:30px;height:26px;padding:0;border:1px solid var(--hairline);border-radius:4px;cursor:pointer;background:none;}
+  table.item-table input[type=checkbox]{width:auto;cursor:pointer;accent-color:var(--accent);}
+  table.item-table tr.sub-row td{background:var(--paper);padding:8px;border-radius:4px;}
+  table.item-table tr.sub-row .field-row:last-child{margin-bottom:0;}
 
   .add-row-btn{width:100%;padding:7px;font-size:12px;border:1px dashed var(--hairline);background:transparent;color:var(--ink-soft);}
   .add-row-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -1644,16 +1647,31 @@
     html += '<div class="field-row"><label>Shape</label><select data-section="box" data-field="shape" data-protein="'+p.id+'">' +
       '<option value="rect"'+(p.box.shape==='rect'?' selected':'')+'>Rectangle</option>' +
       '<option value="rounded"'+(p.box.shape==='rounded'?' selected':'')+'>Rounded rectangle</option>' +
-      '<option value="pill"'+(p.box.shape==='pill'?' selected':'')+'>Pill / stadium</option>' +
-      '<option value="cylinder"'+(p.box.shape==='cylinder'?' selected':'')+'>Cylinder (flat)</option>' +
+      '<option value="pill"'+(p.box.shape==='pill'?' selected':'')+'>Pill</option>' +
+      '<option value="cylinder"'+(p.box.shape==='cylinder'?' selected':'')+'>Cylinder</option>' +
       '</select></div>';
-    html += '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="box" data-field="radius" data-protein="'+p.id+'" value="'+p.box.radius+'"></div>';
+    if(p.box.shape === 'rounded'){
+      html += '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="box" data-field="radius" data-protein="'+p.id+'" value="'+p.box.radius+'"></div>';
+    }
     html += '<div class="field-row"><label>Border</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="box" data-field="hasBorder" data-protein="'+p.id+'" '+(p.box.borderStyle!=='none'?'checked':'')+'> Show border</label></div>';
     html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
-      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}
-    ], 'Domains drawn to scale along the backbone.', 'domain', true);
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}, {field:'formatIndividually', type:'checkbox', label:'Unlock style', title:'Format this domain individually'}
+    ], 'Domains drawn to scale along the backbone.', 'domain', false, function(d){
+      if(!d.formatIndividually) return '';
+      var b = d.box || p.box;
+      return '<div class="field-row"><label>Shape</label><select data-section="domain-box" data-protein="'+p.id+'" data-item="'+d.id+'" data-field="shape">' +
+        '<option value="rect"'+(b.shape==='rect'?' selected':'')+'>Rectangle</option>' +
+        '<option value="rounded"'+(b.shape==='rounded'?' selected':'')+'>Rounded rectangle</option>' +
+        '<option value="pill"'+(b.shape==='pill'?' selected':'')+'>Pill</option>' +
+        '<option value="cylinder"'+(b.shape==='cylinder'?' selected':'')+'>Cylinder</option>' +
+        '</select></div>' +
+        (b.shape === 'rounded' ? '<div class="field-row"><label>Radius</label><input type="number" min="0" max="30" step="1" data-section="domain-box" data-protein="'+p.id+'" data-item="'+d.id+'" data-field="radius" value="'+b.radius+'"></div>' : '') +
+        '<div class="field-row"><label>Border</label><label style="width:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);"><input type="checkbox" style="width:auto;" data-section="domain-box" data-protein="'+p.id+'" data-item="'+d.id+'" data-field="hasBorder" '+(b.borderStyle!=='none'?'checked':'')+'> Show border</label></div>' +
+        '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="domain-box" data-protein="'+p.id+'" data-item="'+d.id+'" data-field="borderWidth" value="'+b.borderWidth+'">' +
+        '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="domain-box" data-protein="'+p.id+'" data-item="'+d.id+'" data-field="borderColor" value="'+b.borderColor+'"></div>';
+    });
 
     html += sectionTable('Regions', p.id, 'label', p.labels, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Text'}
@@ -1661,7 +1679,7 @@
 
     html += sectionTable('Motifs', p.id, 'mark', p.marks, [
       {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Tag (optional)'}, {field:'color', type:'color'}
-    ], 'Thin highlighted bars inside domains, e.g. short linear motifs.', true);
+    ], 'Thin highlighted bars inside domains, e.g. short linear motifs.');
 
     html += sectionTable('Annotations', p.id, 'annotation', p.annotations, [
       {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text (newline = new line)'}
@@ -1674,13 +1692,13 @@
     return '<div class="section-label">'+title+'</div>' + sectionTableBody(proteinId, section, items, columns, hint, title.toLowerCase().replace(/s$/,''), reorderable);
   }
 
-  function sectionTableBody(proteinId, section, items, columns, hint, addLabel, reorderable){
+  function sectionTableBody(proteinId, section, items, columns, hint, addLabel, reorderable, renderSubRow){
     var h = '';
     if(items.length === 0){
       h += '<div class="empty-note">'+hint+'</div>';
     } else {
       h += '<table class="item-table"><thead><tr>';
-      columns.forEach(function(c){ h += '<th>'+(c.label || capitalize(c.field))+'</th>'; });
+      columns.forEach(function(c){ h += '<th'+(c.type==='checkbox'?' style="text-align:center;"':'')+'>'+(c.label || capitalize(c.field))+'</th>'; });
       h += '<th></th></tr></thead><tbody>';
       items.forEach(function(item, i){
         h += '<tr>';
@@ -1690,6 +1708,8 @@
             h += '<td><input type="number" style="width:'+(c.width||56)+'px" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+val+'"></td>';
           } else if(c.type === 'color'){
             h += '<td><input type="color" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" value="'+val+'"></td>';
+          } else if(c.type === 'checkbox'){
+            h += '<td style="text-align:center;"><input type="checkbox" title="'+escapeAttr(c.title||c.label||c.field)+'" data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'" '+(val?'checked':'')+'></td>';
           } else if(c.type === 'textarea'){
             h += '<td><textarea data-section="'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" data-field="'+c.field+'">'+escapeHtml(val)+'</textarea></td>';
           } else {
@@ -1706,6 +1726,10 @@
         h += '<button class="icon-btn danger-text" data-action="remove-'+section+'" data-protein="'+proteinId+'" data-item="'+item.id+'" title="Remove" aria-label="Remove '+section+'">✕</button>';
         h += '</td>';
         h += '</tr>';
+        if(renderSubRow){
+          var sub = renderSubRow(item);
+          if(sub) h += '<tr class="sub-row"><td colspan="'+(columns.length+1)+'">'+sub+'</td></tr>';
+        }
       });
       h += '</tbody></table>';
     }
@@ -1775,8 +1799,13 @@
   // The row is therefore always a single line; collisions are resolved by omission, not
   // by stacking into extra lanes.
   function computeVisibleEndNumbers(p, xFn, numberFontFamily, numberFontSize){
+    // Uses a tighter half-width than textHalfWidth's shared floor/padding (sized for
+    // domain/motif/region tag text): that floor made short numeric labels ("1", "23")
+    // look far wider than their actual glyphs, hiding end-residue numbers even when a
+    // large visible gap remained between them.
     function mkItem(ax, text, isProtein){
-      return {ax:ax, text:text, halfWidth:textHalfWidth(text, numberFontFamily, numberFontSize, '400'), isProtein:isProtein};
+      var half = Math.max(1, measureTextWidth(text, numberFontFamily, numberFontSize, '400') / 2) + 2;
+      return {ax:ax, text:text, halfWidth:half, isProtein:isProtein};
     }
     var items = [
       mkItem(xFn(0), '1', true),
@@ -2246,29 +2275,31 @@
         });
       }
 
-      var shapeAttrs = boxShapeAttrs(p.box);
-      var borderAttrs = boxBorderAttrs(p.box);
       var domainsByX = p.domains.slice().sort(function(a,b){ return a.start - b.start; });
       domainsByX.forEach(function(d){
+        var db = (d.formatIndividually && d.box) ? d.box : p.box;
+        var dShapeAttrs = boxShapeAttrs(db);
+        var dBorderAttrs = boxBorderAttrs(db);
         var dx = px(d.start-1);
         var dw = Math.max(2, px(d.end) - px(d.start-1));
-        if(p.box.shape === 'cylinder'){
+        if(db.shape === 'cylinder'){
           var capRx = Math.min(6, dw/2);
           var bodyAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
-          Object.assign(bodyAttrs, borderAttrs);
+          Object.assign(bodyAttrs, dBorderAttrs);
           svgEl.appendChild(el('rect', bodyAttrs));
           var rightCapAttrs = {cx:dx+dw-capRx, cy:domainTop+DOMAIN_H/2, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
-          Object.assign(rightCapAttrs, borderAttrs);
+          Object.assign(rightCapAttrs, dBorderAttrs);
           svgEl.appendChild(el('ellipse', rightCapAttrs));
         } else {
           var rectAttrs = {x:dx, y:domainTop, width:dw, height:DOMAIN_H, fill:d.color};
-          Object.assign(rectAttrs, shapeAttrs, borderAttrs);
+          Object.assign(rectAttrs, dShapeAttrs, dBorderAttrs);
           svgEl.appendChild(el('rect', rectAttrs));
         }
       });
 
       var markInset = (p.box.borderStyle === 'none') ? 0 : (p.box.borderWidth / 2);
-      p.marks.forEach(function(m){
+      var marksByX = p.marks.slice().sort(function(a,b){ return a.start - b.start; });
+      marksByX.forEach(function(m){
         var mx = px(m.start-1);
         var mw = Math.max(2.5, px(m.end) - px(m.start-1));
         svgEl.appendChild(el('rect', {x:mx, y:domainTop+markInset, width:mw, height:DOMAIN_H-markInset*2, fill:m.color}));
@@ -2355,6 +2386,25 @@
       } else {
         p.box[boxField] = t.value;
       }
+      if(boxField === 'shape'){ render(); return; }
+      renderCanvas();
+      scheduleSaveState();
+      return;
+    }
+
+    if(section === 'domain-box'){
+      var d = p.domains.find(function(dd){ return dd.id === t.dataset.item; });
+      if(!d) return;
+      if(!d.box) d.box = Object.assign({}, p.box);
+      var dboxField = t.dataset.field;
+      if(dboxField === 'hasBorder'){
+        d.box.borderStyle = t.checked ? 'solid' : 'none';
+      } else if(dboxField === 'radius' || dboxField === 'borderWidth'){
+        d.box[dboxField] = parseFloat(t.value) || 0;
+      } else {
+        d.box[dboxField] = t.value;
+      }
+      if(dboxField === 'shape'){ render(); return; }
       renderCanvas();
       scheduleSaveState();
       return;
@@ -2378,7 +2428,14 @@
     var item = arr.find(function(it){ return it.id === t.dataset.item; });
     if(!item) return;
     var field = t.dataset.field;
-    if(field === 'start' || field === 'end' || field === 'position'){
+    if(t.type === 'checkbox'){
+      item[field] = t.checked;
+      if(field === 'formatIndividually'){
+        if(item.formatIndividually && !item.box) item.box = Object.assign({}, p.box);
+        render();
+        return;
+      }
+    } else if(field === 'start' || field === 'end' || field === 'position'){
       item[field] = parseInt(t.value,10) || 0;
     } else {
       item[field] = t.value;
@@ -2435,16 +2492,6 @@
 
     if(action === 'nudge-left'){ p.offset = (p.offset||0) - 10; render(); return; }
     if(action === 'nudge-right'){ p.offset = (p.offset||0) + 10; render(); return; }
-
-    var moveMatch = /^move-(domain|mark)-(up|down)$/.exec(action);
-    if(moveMatch){
-      var arr = p[moveMatch[1] + 's'];
-      var mi = arr.findIndex(function(it){ return it.id === btn.dataset.item; });
-      var mj = moveMatch[2] === 'up' ? mi - 1 : mi + 1;
-      if(mi < 0 || mj < 0 || mj >= arr.length) return;
-      var mtmp = arr[mi]; arr[mi] = arr[mj]; arr[mj] = mtmp;
-      render(); return;
-    }
 
     if(action === 'add-label'){ p.labels.push(newLabel()); render(); return; }
     if(action === 'remove-label'){ p.labels = p.labels.filter(function(it){ return it.id !== btn.dataset.item; }); render(); return; }
