@@ -197,8 +197,25 @@
     min-height:0;
     border-right:1px solid var(--hairline);
     background:var(--panel);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    padding:0;
+  }
+  #sidebarFixed{
+    flex-shrink:0;
+    padding:18px 18px 12px;
+    border-bottom:1px solid var(--hairline);
+  }
+  #proteinList{
+    max-height:260px;
     overflow-y:auto;
-    padding:18px 18px 60px;
+  }
+  #editorPanel{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:14px 18px 60px;
   }
   #canvasSection{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;}
   #canvasToolbar{
@@ -381,7 +398,7 @@
     html, body{height:100%;overflow:hidden;}
     #app{height:100vh;overflow:hidden;}
     #main{flex-direction:column;overflow:hidden;}
-    #sidebar{max-height:28vh;overflow-y:auto;}
+    #sidebar{max-height:28vh;overflow:hidden;}
     #canvasSection{flex:1;min-height:0;}
 
     .toolbar-more-trigger{display:inline-flex;}
@@ -532,10 +549,12 @@
 
   <div id="main">
     <aside id="sidebar">
-      <div class="section-label">Proteins
-        <button id="btnAddProtein" class="icon-btn ghost">+ Add</button>
+      <div id="sidebarFixed">
+        <div class="section-label">Proteins
+          <button id="btnAddProtein" class="icon-btn ghost">+ Add</button>
+        </div>
+        <div id="proteinList"></div>
       </div>
-      <div id="proteinList"></div>
 
       <div id="editorPanel"></div>
     </aside>
@@ -1659,7 +1678,7 @@
     html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
-      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'textarea', label:'Label (newline = new line)'}, {field:'color', type:'color'}, {field:'formatIndividually', type:'checkbox', label:'Unlock style', title:'Format this domain individually'}
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'textarea', label:'Label'}, {field:'color', type:'color'}, {field:'formatIndividually', type:'checkbox', label:'Unlock style', title:'Format this domain individually'}
     ], 'Domains drawn to scale along the backbone.', 'domain', false, function(d){
       if(!d.formatIndividually) return '';
       var b = d.box || p.box;
@@ -1684,7 +1703,7 @@
     ], 'Thin highlighted bars inside domains, e.g. short linear motifs.');
 
     html += sectionTable('Annotations', p.id, 'annotation', p.annotations, [
-      {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text (newline = new line)'}
+      {field:'position', type:'number', width:60, label:'Pos'}, {field:'text', type:'textarea', label:'Text'}
     ], 'Lines with labels below the backbone, e.g. binding sites, mutations.');
 
     editorPanelEl.innerHTML = html;
@@ -2132,7 +2151,7 @@
 
   // A motif "inside" a domain is one whose range is fully contained by that domain's
   // range; used so a motif can pick up its containing domain's box style (e.g. Cylinder).
-  var MOTIF_WRAP_BOW = 6; // fixed left-bow amount for both edges of a motif wrapped around a cylinder
+  var MOTIF_WRAP_BOW = 7; // fixed left-bow amount for both edges of a motif wrapped around a cylinder
   function containingDomainBox(m, domains, proteinBox){
     var d = domains.find(function(d){ return d.start <= m.start && d.end >= m.end; });
     if(!d) return null;
@@ -2961,27 +2980,30 @@
       if(!checked.ptm[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
     });
-    var topologyNamed = {tm:false, intramembrane:false};
+    var topologyNamed = {};
     uniprotParsed.topologyCandidates.forEach(function(t, i){
       if(!checked.topology[i]) return;
       var sel = document.querySelector('.uniprot-topology-dest[data-idx="'+i+'"]');
       var dest = sel ? sel.value : t.defaultDest;
       var color = UNIPROT_TOPOLOGY_COLORS[t.category];
-      var text = t.text;
-      if(t.category === 'tm' || t.category === 'intramembrane'){
-        if(topologyNamed[t.category]) text = '';
-        else topologyNamed[t.category] = true;
+      if(dest === 'region'){
+        np.labels.push({id:uid(), start:t.start, end:t.end, text:t.text});
+        return;
       }
+      var dedupKey = (t.category === 'topodomain')
+        ? uniprotNormalizeDescription(t.text.replace(/^~/, ''))
+        : t.category;
+      var text = t.text;
+      if(topologyNamed[dedupKey]) text = '';
+      else topologyNamed[dedupKey] = true;
       if(dest === 'domain'){
         np.domains.push({
           id:uid(), start:t.start, end:t.end, text:text, color:color,
           formatIndividually:true,
           box:Object.assign({}, np.box, {shape:'cylinder'})
         });
-      } else if(dest === 'motif'){
-        np.marks.push({id:uid(), start:t.start, end:t.end, text:text, color:color});
       } else {
-        np.labels.push({id:uid(), start:t.start, end:t.end, text:t.text});
+        np.marks.push({id:uid(), start:t.start, end:t.end, text:text, color:color});
       }
     });
     if(isCanvasBlank()){
