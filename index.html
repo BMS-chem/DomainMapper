@@ -826,7 +826,7 @@
         var tText = tt.label || f.description || f.type;
         var tDest = tt.dest;
         if(f.type === 'Topological domain'){
-          tDest = ((te.value - ts.value + 1) > 100) ? 'region' : 'motif';
+          tDest = ((te.value - ts.value + 1) > 60) ? 'region' : 'domain';
         }
         topologyCandidates.push({
           start: ts.value, end: te.value,
