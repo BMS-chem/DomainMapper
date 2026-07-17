@@ -1916,9 +1916,11 @@
       return (maxLineWidth(d.text) + DOMAIN_LABEL_H_PAD) > dw;
     }).map(function(d){
       var lines = String(d.text).split('\n');
+      var db = domainBoxFor(d, p);
+      var shift = (db.shape === 'cylinder') ? CYLINDER_CAP_RX : 0;
       return {
         domain: d,
-        ax: (xFn(d.start-1) + xFn(d.end)) / 2,
+        ax: (xFn(d.start-1) + xFn(d.end)) / 2 - shift,
         halfWidth: Math.max(8, maxLineWidth(d.text) / 2) + 4,
         lineCount: lines.length
       };
@@ -2152,10 +2154,14 @@
   // A motif "inside" a domain is one whose range is fully contained by that domain's
   // range; used so a motif can pick up its containing domain's box style (e.g. Cylinder).
   var MOTIF_WRAP_BOW = 7; // fixed left-bow amount for both edges of a motif wrapped around a cylinder
+  var CYLINDER_CAP_RX = 6; // radius of a cylinder domain's elliptical end caps
   function containingDomainBox(m, domains, proteinBox){
     var d = domains.find(function(d){ return d.start <= m.start && d.end >= m.end; });
     if(!d) return null;
     return (d.formatIndividually && d.box) ? d.box : proteinBox;
+  }
+  function domainBoxFor(d, p){
+    return (d.formatIndividually && d.box) ? d.box : p.box;
   }
 
   // Measures every text element (region labels, motif tags, domain names, end/residue
@@ -2368,7 +2374,7 @@
 
       var domainsByX = p.domains.slice().sort(function(a,b){ return a.start - b.start; });
       domainsByX.forEach(function(d){
-        var db = (d.formatIndividually && d.box) ? d.box : p.box;
+        var db = domainBoxFor(d, p);
         var dShapeAttrs = boxShapeAttrs(db);
         var dBorderAttrs = boxBorderAttrs(db);
         var dx = px(d.start-1);
@@ -2380,7 +2386,7 @@
           // by the same amount so its rounded corners' flat run begins at dx/dx+dw.
           // capRx is fixed (not scaled down for narrow domains) so the caps always
           // read as a proper ellipse rather than getting visually squashed.
-          var capRx = 6;
+          var capRx = CYLINDER_CAP_RX;
           var bodyAttrs = {x:dx-capRx, y:domainTop, width:dw+capRx*2, height:DOMAIN_H, rx:capRx, ry:DOMAIN_H/2, fill:d.color};
           Object.assign(bodyAttrs, dBorderAttrs);
           svgEl.appendChild(el('rect', bodyAttrs));
@@ -2424,7 +2430,9 @@
       p.domains.forEach(function(d){
         var dx = px(d.start-1);
         var dw = Math.max(2, px(d.end) - px(d.start-1));
-        var cx = dx + dw/2;
+        var db = domainBoxFor(d, p);
+        var shift = (db.shape === 'cylinder') ? CYLINDER_CAP_RX : 0;
+        var cx = dx + dw/2 - shift;
         var lines = String(d.text||'').split('\n');
         var overflowItem = domainLabelById[d.id];
         if(overflowItem){
