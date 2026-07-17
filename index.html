@@ -728,6 +728,8 @@
   var ANNOT_TEXT_GAP = 7;
   var ANNOT_BASELINE_OFFSET = 9; // compensates for font ascent so the visible gap below the line matches the visible gap above it
   var ANNOT_LINE_H = 14;
+  var DOMAIN_LABEL_LINE_H = 15;
+  var DOMAIN_LABEL_H_PAD = 8; // horizontal breathing room before a label is judged to overflow its box
   var PX_PER_CM = 37.7952755906; // CSS px, 96dpi
 
   function getTrackWidthPx(){
@@ -770,8 +772,8 @@
   var UNIPROT_SITE_TYPES = ['Active site','Binding site','Site'];
   var UNIPROT_PTM_LABEL_TYPES = ['Modified residue','Lipidation','Glycosylation','Cross-link'];
   var UNIPROT_TOPOLOGY_TYPES = {
-    'Transmembrane': {category:'tm', label:'Transmembrane', dest:'motif'},
-    'Intramembrane': {category:'intramembrane', label:'Intramembrane', dest:'motif'},
+    'Transmembrane': {category:'tm', label:'Transmembrane', dest:'domain'},
+    'Intramembrane': {category:'intramembrane', label:'Intramembrane', dest:'domain'},
     'Topological domain': {category:'topodomain', label:null, dest:'region'}
   };
   var UNIPROT_TOPOLOGY_COLORS = {tm:'#C97C5D', intramembrane:'#C9A66B', topodomain:'#7C9EB2'};
@@ -1657,7 +1659,7 @@
     html += '<div class="field-row"><label>Width</label><input type="number" min="0" max="6" step="0.2" style="max-width:64px;" data-section="box" data-field="borderWidth" data-protein="'+p.id+'" value="'+p.box.borderWidth+'">' +
       '<label style="width:auto;margin-left:8px;">Colour</label><input type="color" style="width:36px;height:30px;padding:0;border:1px solid var(--hairline);border-radius:5px;cursor:pointer;" data-section="box" data-field="borderColor" data-protein="'+p.id+'" value="'+p.box.borderColor+'"></div>';
     html += sectionTableBody(p.id, 'domain', p.domains, [
-      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'text', label:'Label'}, {field:'color', type:'color'}, {field:'formatIndividually', type:'checkbox', label:'Unlock style', title:'Format this domain individually'}
+      {field:'start', type:'number', width:50}, {field:'end', type:'number', width:50}, {field:'text', type:'textarea', label:'Label (newline = new line)'}, {field:'color', type:'color'}, {field:'formatIndividually', type:'checkbox', label:'Unlock style', title:'Format this domain individually'}
     ], 'Domains drawn to scale along the backbone.', 'domain', false, function(d){
       if(!d.formatIndividually) return '';
       var b = d.box || p.box;
@@ -1880,17 +1882,78 @@
     return {items: items, numLanes: laneEnds.length};
   }
 
-  // Structural row(s) above the domain: plain motif-tag text (no connector line),
-  // sitting directly above the box, stacked into lanes when tags would collide.
-  function aboveRows(p, xFn, numberFontFamily, numberFontSize){
+  // Domain labels that don't fit horizontally inside their box (per assignDomainLabelLanes'
+  // caller) move above the domain instead, stacking into lanes — same interval-scheduling
+  // pattern as assignMarkTagLanes — when several would collide.
+  function assignDomainLabelLanes(p, xFn, domainFontFamily, domainFontSize){
+    function maxLineWidth(str){
+      return String(str).split('\n').reduce(function(m, line){
+        return Math.max(m, measureTextWidth(line, domainFontFamily, domainFontSize, '600'));
+      }, 0);
+    }
+    var items = p.domains.filter(function(d){
+      if(!d.text) return false;
+      var dw = Math.max(2, xFn(d.end) - xFn(d.start-1));
+      return (maxLineWidth(d.text) + DOMAIN_LABEL_H_PAD) > dw;
+    }).map(function(d){
+      var lines = String(d.text).split('\n');
+      return {
+        domain: d,
+        ax: (xFn(d.start-1) + xFn(d.end)) / 2,
+        halfWidth: Math.max(8, maxLineWidth(d.text) / 2) + 4,
+        lineCount: lines.length
+      };
+    });
+    items.sort(function(a,b){ return a.ax - b.ax; });
+    var laneEnds = [];
+    items.forEach(function(item){
+      var placed = false;
+      for(var i=0; i<laneEnds.length; i++){
+        if((item.ax - item.halfWidth) > laneEnds[i] + 8){
+          laneEnds[i] = item.ax + item.halfWidth;
+          item.lane = i;
+          placed = true;
+          break;
+        }
+      }
+      if(!placed){
+        item.lane = laneEnds.length;
+        laneEnds.push(item.ax + item.halfWidth);
+      }
+    });
+    var laneHeight = [];
+    items.forEach(function(item){
+      var h = item.lineCount * DOMAIN_LABEL_LINE_H;
+      if(!laneHeight[item.lane] || h > laneHeight[item.lane]) laneHeight[item.lane] = h;
+    });
+    var laneOffset = [0];
+    for(var i=1; i<laneHeight.length; i++){ laneOffset[i] = laneOffset[i-1] + laneHeight[i-1]; }
+    items.forEach(function(item){ item.laneOffset = laneOffset[item.lane]; });
+    var totalHeight = laneHeight.reduce(function(s,h){ return s+h; }, 0);
+    return {items: items, numLanes: laneEnds.length, totalHeight: totalHeight};
+  }
+
+  // Structural row(s) above the domain: plain motif-tag text (no connector line) and
+  // overflowing domain labels, sitting directly above the box, stacked into lanes when
+  // they'd collide. Motif tags sit closest to the box; overflowing domain labels clear
+  // past them when their x-ranges overlap (see clearanceFor use at the domain-label draw
+  // site), so the row order here (marktag first) reflects that physical stacking order.
+  function aboveRows(p, xFn, numberFontFamily, numberFontSize, domainFontFamily, domainFontSize){
     var markLaneInfo = assignMarkTagLanes(p, xFn, numberFontFamily, numberFontSize);
+    var domainLabelLaneInfo = assignDomainLabelLanes(p, xFn, domainFontFamily, domainFontSize);
     var hasMarkText = markLaneInfo.items.length > 0;
     var rows = [];
+    var markRow = null;
     if(hasMarkText){
       var obstacles = markLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
-      rows.push({name:'marktag', height:markLaneInfo.numLanes * MARK_TAG_LANE_H, obstacles:obstacles});
+      markRow = {name:'marktag', height:markLaneInfo.numLanes * MARK_TAG_LANE_H, obstacles:obstacles};
+      rows.push(markRow);
     }
-    return {rows:rows, hasMarkText:hasMarkText, markLaneInfo:markLaneInfo};
+    if(domainLabelLaneInfo.items.length){
+      var dObstacles = domainLabelLaneInfo.items.map(function(i){ return {ax:i.ax, halfWidth:i.halfWidth}; });
+      rows.push({name:'domainlabel', height:domainLabelLaneInfo.totalHeight, obstacles:dObstacles});
+    }
+    return {rows:rows, hasMarkText:hasMarkText, markLaneInfo:markLaneInfo, domainLabelLaneInfo:domainLabelLaneInfo, markRow:markRow};
   }
 
   function clearanceFor(item, rows){
@@ -1905,9 +1968,9 @@
 
   // Annotation text shares the "Labels" font family/size with residue numbers and
   // motif tags (numberFontFamily/numberFontSize) — it only keeps a distinct fill color.
-  function classifyAnnotations(p, xFn, numberFontFamily, numberFontSize){
+  function classifyAnnotations(p, xFn, numberFontFamily, numberFontSize, domainFontFamily, domainFontSize){
     var belowInfo = belowRows(p, xFn, numberFontFamily, numberFontSize);
-    var aboveInfo = aboveRows(p, xFn, numberFontFamily, numberFontSize);
+    var aboveInfo = aboveRows(p, xFn, numberFontFamily, numberFontSize, domainFontFamily || numberFontFamily, domainFontSize || numberFontSize);
 
     var items = p.annotations.map(function(a){
       var lines = String(a.text||'').split('\n');
@@ -1945,7 +2008,7 @@
       item.lineLength = ANNOT_ROW_H_BASE + clearanceFor(item, aboveInfo.rows) + item.laneOffset;
     });
 
-    return {below:below, above:above, hasMarkText:aboveInfo.hasMarkText, belowRows:belowInfo.rows, aboveRows:aboveInfo.rows, markLaneInfo:aboveInfo.markLaneInfo, endNumberLaneInfo:belowInfo.endNumberLaneInfo};
+    return {below:below, above:above, hasMarkText:aboveInfo.hasMarkText, belowRows:belowInfo.rows, aboveRows:aboveInfo.rows, markLaneInfo:aboveInfo.markLaneInfo, markRow:aboveInfo.markRow, domainLabelLaneInfo:aboveInfo.domainLabelLaneInfo, endNumberLaneInfo:belowInfo.endNumberLaneInfo};
   }
 
   // Fallback for annotations that still clash in x after the above/below flip pass:
@@ -2119,7 +2182,7 @@
         });
       }
 
-      var cls = classifyAnnotations(p, x0, fNumber.family, numberSize);
+      var cls = classifyAnnotations(p, x0, fNumber.family, numberSize, fDomain.family, domainSize);
       cls.below.concat(cls.above).forEach(function(item){
         widen(item.ax, item.halfWidth);
       });
@@ -2166,7 +2229,7 @@
     };
 
     var classifications = visibleProteins.map(function(p){
-      return classifyAnnotations(p, xFor(p), fNumber.family, parseFloat(fNumber.size) || 11);
+      return classifyAnnotations(p, xFor(p), fNumber.family, parseFloat(fNumber.size) || 11, fDomain.family, parseFloat(fDomain.size) || 12.5);
     });
     var labelLayouts = visibleProteins.map(function(p){
       return assignLabelLanes(p, xFor(p), fRegion.family, parseFloat(fRegion.size) || 12.5);
@@ -2306,14 +2369,32 @@
       });
 
       // domain name text drawn last within this stack so it always sits above
-      // both the domain box fill and any motif mark bars inside it
+      // both the domain box fill and any motif mark bars inside it. A label
+      // that doesn't fit horizontally inside its box (per domainLabelLaneInfo,
+      // computed in classifyAnnotations) is drawn above the domain instead of
+      // centered inside it, clearing past the motif-tag row when they'd collide.
+      var domainLabelById = {};
+      cls.domainLabelLaneInfo.items.forEach(function(item){ domainLabelById[item.domain.id] = item; });
       p.domains.forEach(function(d){
         var dx = px(d.start-1);
         var dw = Math.max(2, px(d.end) - px(d.start-1));
         var cx = dx + dw/2;
-        svgEl.appendChild(text(cx, domainTop+DOMAIN_H/2+4, d.text, {
-          'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'600', 'font-size':fDomain.size, fill: INK
-        }));
+        var lines = String(d.text||'').split('\n');
+        var overflowItem = domainLabelById[d.id];
+        if(overflowItem){
+          var markClearance = cls.markRow ? clearanceFor(overflowItem, [cls.markRow]) : 0;
+          var closestBaselineY = domainTop - 6 - markClearance - overflowItem.laneOffset;
+          var topBaseline = closestBaselineY - (lines.length-1) * DOMAIN_LABEL_LINE_H;
+          svgEl.appendChild(multilineText(cx, topBaseline, d.text, {
+            'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'600', 'font-size':fDomain.size, fill: INK
+          }, DOMAIN_LABEL_LINE_H));
+        } else {
+          var blockHeight = (lines.length-1) * DOMAIN_LABEL_LINE_H;
+          var topBaseline2 = domainTop+DOMAIN_H/2+4 - blockHeight/2;
+          svgEl.appendChild(multilineText(cx, topBaseline2, d.text, {
+            'text-anchor':'middle', 'font-family':fDomain.family, 'font-weight':'600', 'font-size':fDomain.size, fill: INK
+          }, DOMAIN_LABEL_LINE_H));
+        }
       });
 
       // end-number row: protein start/end, plus each visible domain start/end residue
@@ -2853,20 +2934,24 @@
       if(!checked.ptm[i]) return;
       np.annotations.push({id:uid(), position:a.position, text:a.text});
     });
-    var topologyMotifNamed = {tm:false, intramembrane:false};
+    var topologyNamed = {tm:false, intramembrane:false};
     uniprotParsed.topologyCandidates.forEach(function(t, i){
       if(!checked.topology[i]) return;
       var sel = document.querySelector('.uniprot-topology-dest[data-idx="'+i+'"]');
       var dest = sel ? sel.value : t.defaultDest;
       var color = UNIPROT_TOPOLOGY_COLORS[t.category];
+      var text = t.text;
+      if(t.category === 'tm' || t.category === 'intramembrane'){
+        if(topologyNamed[t.category]) text = '';
+        else topologyNamed[t.category] = true;
+      }
       if(dest === 'domain'){
-        np.domains.push({id:uid(), start:t.start, end:t.end, text:t.text, color:color});
+        np.domains.push({
+          id:uid(), start:t.start, end:t.end, text:text, color:color,
+          formatIndividually:true,
+          box:Object.assign({}, np.box, {shape:'cylinder'})
+        });
       } else if(dest === 'motif'){
-        var text = t.text;
-        if(t.category === 'tm' || t.category === 'intramembrane'){
-          if(topologyMotifNamed[t.category]) text = '';
-          else topologyMotifNamed[t.category] = true;
-        }
         np.marks.push({id:uid(), start:t.start, end:t.end, text:text, color:color});
       } else {
         np.labels.push({id:uid(), start:t.start, end:t.end, text:t.text});
